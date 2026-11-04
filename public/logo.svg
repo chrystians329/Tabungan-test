@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <defs>
+    <linearGradient id="brandGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10B981" />
+      <stop offset="100%" stop-color="#047857" />
+    </linearGradient>
+    <linearGradient id="slateGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#334155" />
+      <stop offset="100%" stop-color="#0F172A" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#10B981" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+  
+  <!-- Outer Rounded Diamond / Shield Background -->
+  <rect x="14" y="14" width="72" height="72" rx="22" transform="rotate(45 50 50)" fill="url(#slateGrad)" stroke="#10B981" stroke-width="2.5" stroke-opacity="0.4" />
+  
+  <!-- Growth Arrows / Dynamic Finance Wave Vault -->
+  <path d="M50 28 L68 46 L60 46 L60 64 L40 64 L40 46 L32 46 Z" fill="url(#brandGrad)" filter="url(#shadow)"/>
+  
+  <!-- Modern Center Coin / Safe Core Node -->
+  <circle cx="50" cy="52" r="6.5" fill="#FFFFFF" stroke="#047857" stroke-width="2"/>
+  <circle cx="50" cy="52" r="2.5" fill="#10B981"/>
+</svg>
+
