@@ -97,7 +97,7 @@ export const TemplateSettingsModal: React.FC<TemplateSettingsModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60">
       <div className="w-full max-w-lg bg-white dark:bg-darkcard rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200 dark:border-darkborder overflow-hidden modal-in">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-darkborder">
@@ -131,11 +131,10 @@ export const TemplateSettingsModal: React.FC<TemplateSettingsModalProps> = ({
                 </p>
               </div>
             ) : (
-              templates.map((tpl, index) => (
+              templates.map((tpl) => (
                 <div
                   key={tpl.id}
-                  className="flex items-center justify-between gap-3 p-3.5 rounded-2xl bg-slate-50 dark:bg-darkbg border border-slate-200 dark:border-darkborder hover:border-brand-500/40 transition group fade-up"
-                  style={{ animationDelay: `${Math.min(index, 8) * 40}ms` }}
+                  className="flex items-center justify-between gap-3 p-3.5 rounded-2xl bg-slate-50 dark:bg-darkbg border border-slate-200 dark:border-darkborder hover:border-brand-500/40 transition group"
                 >
                   <div className="min-w-0">
                     <span className="text-sm font-bold text-slate-900 dark:text-white block truncate">

@@ -123,10 +123,12 @@ export const parseReceipt = (text: string): OCRResult => {
   }
 
   // 3. Amount / Total Detection
-  // Look for keywords: "TOTAL", "GRAND TOTAL", "TOTAL BAYAR", "TAGIHAN", "JUMLAH"
+  // Prioritaskan GRAND TOTAL / TOTAL BAYAR (sudah termasuk pajak/PPN).
+  // Hindari "Subtotal" (belum termasuk pajak) — lookbehind + urutan keyword.
   const totalRegexes = [
-    /(?:total|grand\s*total|total\s*bayar|total\s*tagihan|jumlah\s*bayar|netto|bayar)[\s\:\.\=]*r?p?\.?\s*([\d\.\,]+)/i,
-    /r?p?\.?\s*([\d\.\,]+)[\s]*(?:total|grand\s*total)/i,
+    /(?:grand[\s\.\*]*total|total[\s\.\*]*bayar|total[\s\.\*]*tagihan|jumlah[\s\.\*]*bayar|total[\s\.\*]*akhir|netto)[\s\:\.\=]*r?p?\.?\s*([\d\.\,]+)/i,
+    /(?<!sub)(?:^|[^\w])total[\s\:\.\=]*r?p?\.?\s*([\d\.\,]+)/im,
+    /r?p?\.?\s*([\d\.\,]+)[\s]*(?:grand[\s\.\*]*total)/i,
   ];
 
   for (const regex of totalRegexes) {
@@ -137,6 +139,22 @@ export const parseReceipt = (text: string): OCRResult => {
         amount = cleaned;
         break;
       }
+    }
+  }
+
+  // Jika hanya Subtotal + PPN/Pajak yang terbaca (tanpa baris Grand Total),
+  // jumlahkan agar pajak ikut masuk ke amount.
+  if (amount === 0) {
+    const subMatch = text.match(
+      /(?:subtotal|sub[\s\.\*]*total)[\s\:\.\=]*r?p?\.?\s*([\d\.\,]+)/i
+    );
+    const taxMatch = text.match(
+      /(?:ppn|pajak|vat|tax)[\s\:\.\=]*r?p?\.?\s*([\d\.\,]+)/i
+    );
+    if (subMatch) {
+      const sub = cleanNominalString(subMatch[1]);
+      const tax = taxMatch ? cleanNominalString(taxMatch[1]) : 0;
+      if (sub > 0) amount = sub + tax;
     }
   }
 

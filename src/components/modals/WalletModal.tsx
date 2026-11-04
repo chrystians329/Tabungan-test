@@ -42,7 +42,8 @@ export const WalletModal: React.FC<WalletModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const balance = Number(balanceStr.replace(/\D/g, '')) || 0;
+    // Izinkan saldo negatif (hanya strip karakter non-angka, pertahankan tanda minus)
+    const balance = Number(balanceStr.replace(/[^\d-]/g, '')) || 0;
     if (!name.trim()) {
       alert('Masukkan nama dompet / bank.');
       return;
@@ -69,12 +70,19 @@ export const WalletModal: React.FC<WalletModalProps> = ({
   };
 
   const handleBalanceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const raw = e.target.value.replace(/\D/g, '');
-    setBalanceStr(raw ? new Intl.NumberFormat('id-ID').format(Number(raw)) : '');
+    const raw = e.target.value;
+    const negative = raw.trim().startsWith('-');
+    const digits = raw.replace(/[^\d]/g, '');
+    if (!digits) {
+      setBalanceStr(negative ? '-' : '');
+      return;
+    }
+    const formatted = new Intl.NumberFormat('id-ID').format(Number(digits));
+    setBalanceStr(negative ? `-${formatted}` : formatted);
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-sm transition-all">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 transition-all">
       <div className="w-full max-w-md bg-white dark:bg-darkcard rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200 dark:border-darkborder overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-darkborder">
           <h3 className="text-base font-bold text-slate-900 dark:text-white">
@@ -162,6 +170,7 @@ export const WalletModal: React.FC<WalletModalProps> = ({
               </span>
               <input
                 type="text"
+                inputMode="numeric"
                 value={balanceStr}
                 onChange={handleBalanceChange}
                 placeholder="0"

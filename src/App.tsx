@@ -221,8 +221,14 @@ const AppContent: React.FC = () => {
 
       {/* Mobile Quick Action Drawer */}
       {isMobileQuickMenuOpen && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center p-0 bg-slate-900/60 backdrop-blur-sm lg:hidden">
-          <div className="w-full bg-white dark:bg-darkcard rounded-t-3xl shadow-2xl border-t border-slate-200 dark:border-darkborder p-6 pb-safe space-y-4 sheet-in">
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center p-0 bg-slate-900/60 lg:hidden"
+          onClick={() => setIsMobileQuickMenuOpen(false)}
+        >
+          <div
+            className="w-full bg-white dark:bg-darkcard rounded-t-3xl shadow-2xl border-t border-slate-200 dark:border-darkborder p-6 pb-safe space-y-4 sheet-in"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between">
               <span className="text-sm font-bold text-slate-900 dark:text-white">
                 Aksi Cepat

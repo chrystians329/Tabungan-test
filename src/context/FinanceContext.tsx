@@ -345,10 +345,12 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     const grandTotal = cashTotal + ewalletTotal + bankTotal + goalsTotal;
 
-    const cashPercentage = grandTotal > 0 ? (cashTotal / grandTotal) * 100 : 0;
-    const ewalletPercentage = grandTotal > 0 ? (ewalletTotal / grandTotal) * 100 : 0;
-    const bankPercentage = grandTotal > 0 ? (bankTotal / grandTotal) * 100 : 0;
-    const goalsPercentage = grandTotal > 0 ? (goalsTotal / grandTotal) * 100 : 0;
+    // Pakai abs agar persentase tetap valid saat grand total negatif (saldo minus)
+    const denom = Math.abs(grandTotal);
+    const cashPercentage = denom > 0 ? (cashTotal / denom) * 100 : 0;
+    const ewalletPercentage = denom > 0 ? (ewalletTotal / denom) * 100 : 0;
+    const bankPercentage = denom > 0 ? (bankTotal / denom) * 100 : 0;
+    const goalsPercentage = denom > 0 ? (goalsTotal / denom) * 100 : 0;
 
     return {
       cashTotal,
@@ -371,17 +373,17 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
       createdAt: new Date().toISOString(),
     };
 
-    // Update wallet balance accordingly
+    // Update wallet balance accordingly (saldo boleh minus / overdraw)
     const updatedWallets = wallets.map((w) => {
       if (txData.type === 'income' && w.id === txData.walletId) {
         return { ...w, balance: w.balance + txData.amount };
       }
       if (txData.type === 'expense' && w.id === txData.walletId) {
-        return { ...w, balance: Math.max(0, w.balance - txData.amount) };
+        return { ...w, balance: w.balance - txData.amount };
       }
       if (txData.type === 'transfer') {
         if (w.id === txData.walletId) {
-          return { ...w, balance: Math.max(0, w.balance - txData.amount) };
+          return { ...w, balance: w.balance - txData.amount };
         }
         if (w.id === txData.toWalletId) {
           return { ...w, balance: w.balance + txData.amount };
@@ -405,7 +407,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (oldTx.type === 'income') {
       tempWallets = tempWallets.map((w) =>
         w.id === oldTx.walletId
-          ? { ...w, balance: Math.max(0, w.balance - oldTx.amount) }
+          ? { ...w, balance: w.balance - oldTx.amount }
           : w
       );
     } else if (oldTx.type === 'expense') {
@@ -415,7 +417,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     } else if (oldTx.type === 'transfer') {
       tempWallets = tempWallets.map((w) => {
         if (w.id === oldTx.walletId) return { ...w, balance: w.balance + oldTx.amount };
-        if (w.id === oldTx.toWalletId) return { ...w, balance: Math.max(0, w.balance - oldTx.amount) };
+        if (w.id === oldTx.toWalletId) return { ...w, balance: w.balance - oldTx.amount };
         return w;
       });
     }
@@ -429,12 +431,12 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     } else if (newTx.type === 'expense') {
       tempWallets = tempWallets.map((w) =>
         w.id === newTx.walletId
-          ? { ...w, balance: Math.max(0, w.balance - newTx.amount) }
+          ? { ...w, balance: w.balance - newTx.amount }
           : w
       );
     } else if (newTx.type === 'transfer') {
       tempWallets = tempWallets.map((w) => {
-        if (w.id === newTx.walletId) return { ...w, balance: Math.max(0, w.balance - newTx.amount) };
+        if (w.id === newTx.walletId) return { ...w, balance: w.balance - newTx.amount };
         if (w.id === newTx.toWalletId) return { ...w, balance: w.balance + newTx.amount };
         return w;
       });
@@ -454,7 +456,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (oldTx.type === 'income') {
       updatedWallets = updatedWallets.map((w) =>
         w.id === oldTx.walletId
-          ? { ...w, balance: Math.max(0, w.balance - oldTx.amount) }
+          ? { ...w, balance: w.balance - oldTx.amount }
           : w
       );
     } else if (oldTx.type === 'expense') {
@@ -464,7 +466,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     } else if (oldTx.type === 'transfer') {
       updatedWallets = updatedWallets.map((w) => {
         if (w.id === oldTx.walletId) return { ...w, balance: w.balance + oldTx.amount };
-        if (w.id === oldTx.toWalletId) return { ...w, balance: Math.max(0, w.balance - oldTx.amount) };
+        if (w.id === oldTx.toWalletId) return { ...w, balance: w.balance - oldTx.amount };
         return w;
       });
     }

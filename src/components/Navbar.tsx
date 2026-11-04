@@ -1,11 +1,5 @@
 import React from 'react';
-import {
-  Sun,
-  Moon,
-  Cloud,
-  FileSpreadsheet,
-  Menu,
-} from 'lucide-react';
+import { Cloud, FileSpreadsheet, Menu } from 'lucide-react';
 import { useFinance } from '../context/FinanceContext';
 import { formatRupiah } from '../utils/formatters';
 
@@ -20,10 +14,10 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenSyncModal,
   onOpenExportImport,
 }) => {
-  const { theme, toggleTheme, breakdown, settings } = useFinance();
+  const { breakdown, settings } = useFinance();
 
   return (
-    <header className="sticky top-0 z-30 bg-white/80 dark:bg-darkcard/80 backdrop-blur-md border-b border-slate-200/80 dark:border-darkborder transition-colors">
+    <header className="sticky top-0 z-30 pt-safe bg-white dark:bg-darkcard border-b border-slate-200/80 dark:border-darkborder transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
         {/* Hamburger (kiri logo) + Brand */}
         <div className="flex items-center space-x-3 min-w-0">
@@ -62,7 +56,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           </span>
         </div>
 
-        {/* Action Controls */}
+        {/* Action Controls (theme pindah ke hamburger menu) */}
         <div className="flex items-center space-x-2">
           <div className="md:hidden flex items-center space-x-2 bg-slate-100 dark:bg-darkbg px-2.5 py-1.5 rounded-full border border-slate-200 dark:border-darkborder">
             <span className="text-[10px] font-bold text-brand-600 dark:text-brand-400">
@@ -85,21 +79,9 @@ export const Navbar: React.FC<NavbarProps> = ({
           >
             <Cloud className="w-4 h-4" />
             {settings.syncEnabled ? (
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-brand-500 animate-pulse" />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-brand-500" />
             ) : (
               <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-600" />
-            )}
-          </button>
-
-          <button
-            onClick={toggleTheme}
-            className="p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-darkborder/50 transition"
-            title={`Ganti ke mode ${theme === 'light' ? 'Gelap' : 'Terang'}`}
-          >
-            {theme === 'light' ? (
-              <Moon className="w-4 h-4 text-slate-700" />
-            ) : (
-              <Sun className="w-4 h-4 text-amber-400" />
             )}
           </button>
         </div>

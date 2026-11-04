@@ -4,6 +4,7 @@ import {
   Receipt,
   Smartphone,
   UploadCloud,
+  Camera,
   Loader2,
   Sparkles,
   ArrowRight,
@@ -152,31 +153,63 @@ export const ScanView: React.FC<ScanViewProps> = ({ onConfirmTransaction }) => {
           }`}
         >
           <Smartphone className="w-4 h-4" />
-          <span>Screenshot E-Wallet / QRIS</span>
+          <span>SS E-Wallet / QRIS</span>
         </button>
       </div>
 
       {/* Main Upload / Scanner Box */}
       <div className="rounded-3xl bg-white dark:bg-darkcard border border-slate-200 dark:border-darkborder p-6 shadow-soft space-y-5">
         {!imagePreview ? (
-          <label className="border-2 border-dashed border-slate-300 dark:border-darkborder rounded-2xl p-12 flex flex-col items-center justify-center text-center cursor-pointer hover:border-brand-500 transition group bg-slate-50/50 dark:bg-darkbg/30">
-            <div className="w-16 h-16 rounded-2xl bg-brand-500/10 text-brand-600 dark:text-brand-400 flex items-center justify-center mb-4 group-hover:scale-110 transition shadow-soft">
+          <div className="border-2 border-dashed border-slate-300 dark:border-darkborder rounded-2xl p-8 sm:p-12 flex flex-col items-center justify-center text-center bg-slate-50/50 dark:bg-darkbg/30">
+            <div className="w-16 h-16 rounded-2xl bg-brand-500/10 text-brand-600 dark:text-brand-400 flex items-center justify-center mb-4 shadow-soft">
               <UploadCloud className="w-8 h-8" />
             </div>
             <span className="text-base font-bold text-slate-900 dark:text-white">
               {scanType === 'receipt' ? 'Upload Foto Struk Belanja' : 'Upload Bukti Screenshot E-Wallet'}
             </span>
             <p className="text-xs text-slate-400 mt-1 max-w-sm">
-              Ambil gambar langsung dengan kamera HP Anda atau pilih dari galeri.
+              {scanType === 'receipt'
+                ? 'Pilih foto dari galeri atau ambil langsung dengan kamera HP Anda.'
+                : 'Pilih file screenshot dari galeri / file manager HP Anda.'}
             </p>
-            <input
-              type="file"
-              accept="image/*"
-              capture="environment"
-              onChange={handleFileSelect}
-              className="hidden"
-            />
-          </label>
+
+            {scanType === 'receipt' ? (
+              <div className="flex flex-col sm:flex-row gap-3 mt-5 w-full max-w-sm">
+                <label className="flex-1 py-3 px-4 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-sm font-bold cursor-pointer transition flex items-center justify-center gap-2 shadow-soft">
+                  <UploadCloud className="w-4 h-4" />
+                  <span>Pilih Foto</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                  />
+                </label>
+                <label className="flex-1 py-3 px-4 rounded-xl bg-white dark:bg-darkcard border border-slate-200 dark:border-darkborder text-slate-700 dark:text-slate-200 text-sm font-bold cursor-pointer transition flex items-center justify-center gap-2 hover:border-brand-500">
+                  <Camera className="w-4 h-4" />
+                  <span>Ambil Kamera</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+            ) : (
+              <label className="inline-flex py-3 px-6 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-sm font-bold cursor-pointer transition items-center gap-2 mt-5 shadow-soft">
+                <UploadCloud className="w-4 h-4" />
+                <span>Pilih File</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+              </label>
+            )}
+          </div>
         ) : (
           <div className="space-y-4">
             <div className="relative rounded-2xl overflow-hidden border border-slate-200 dark:border-darkborder max-h-72 flex items-center justify-center bg-black/5">
@@ -302,11 +335,10 @@ export const ScanView: React.FC<ScanViewProps> = ({ onConfirmTransaction }) => {
           </div>
         ) : (
           <div className="divide-y divide-slate-100 dark:divide-darkborder max-h-96 overflow-y-auto">
-            {scanHistory.map((item, index) => (
+            {scanHistory.map((item) => (
               <div
                 key={item.id}
-                className="p-4 flex items-center justify-between gap-3 hover:bg-slate-50/60 dark:hover:bg-darkbg/40 transition fade-up"
-                style={{ animationDelay: `${Math.min(index, 10) * 35}ms` }}
+                className="p-4 flex items-center justify-between gap-3 hover:bg-slate-50/60 dark:hover:bg-darkbg/40 transition"
               >
                 <div className="flex items-center space-x-3 min-w-0">
                   <div

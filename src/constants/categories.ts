@@ -3,6 +3,7 @@ export const EXPENSE_CATEGORIES = [
   'Belanja & Groceries',
   'Transportasi',
   'Tagihan & Utilitas',
+  'Pajak & PPN',
   'Hiburan & Hobi',
   'Kesehatan & Medis',
   'Pendidikan',

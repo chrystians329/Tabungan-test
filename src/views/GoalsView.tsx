@@ -171,16 +171,16 @@ export const GoalsView: React.FC<GoalsViewProps> = ({
                     <img
                       src={goal.imageUrl || 'https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?auto=format&fit=crop&w=400&q=80'}
                       alt={goal.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                      className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                     />
                     <div className="absolute top-2.5 left-2.5 flex items-center space-x-1.5">
-                      <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full backdrop-blur-md ${badge.badgeClass}`}>
+                      <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${badge.badgeClass}`}>
                         {badge.label}
                       </span>
                     </div>
 
                     {isCompleted && (
-                      <div className="absolute inset-0 bg-brand-900/40 backdrop-blur-[2px] flex items-center justify-center">
+                      <div className="absolute inset-0 bg-brand-900/50 flex items-center justify-center">
                         <span className="px-3 py-1 rounded-full bg-brand-500 text-white text-xs font-bold flex items-center gap-1 shadow-lg">
                           <CheckCircle className="w-4 h-4" />
                           Target Tercapai!

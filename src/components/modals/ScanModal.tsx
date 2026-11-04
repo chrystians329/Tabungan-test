@@ -5,6 +5,7 @@ import {
   Receipt,
   Smartphone,
   UploadCloud,
+  Camera,
   CheckCircle2,
   AlertCircle,
   Sparkles,
@@ -137,7 +138,7 @@ export const ScanModal: React.FC<ScanModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-sm transition-all">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 transition-all">
       <div className="w-full max-w-lg bg-white dark:bg-darkcard rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200 dark:border-darkborder overflow-hidden modal-in">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-darkborder">
@@ -187,36 +188,76 @@ export const ScanModal: React.FC<ScanModalProps> = ({
               }`}
             >
               <Smartphone className="w-4 h-4" />
-              <span>Screenshot E-Wallet</span>
+              <span>SS E-Wallet</span>
             </button>
           </div>
 
           <p className="text-xs text-slate-500 dark:text-slate-400">
             {scanType === 'receipt'
               ? 'Pindai struk belanja Indomaret, Alfamart, restoran, supermarket untuk membaca nominal otomatis.'
-              : 'Pindai screenshot transfer GoPay, OVO, DANA, BCA, QRIS untuk pencatatan instan.'}
+              : 'Pilih file screenshot transfer GoPay, OVO, DANA, BCA, QRIS untuk pencatatan instan.'}
           </p>
 
           {/* Upload Area / Dropzone */}
           {!imagePreview ? (
-            <label className="border-2 border-dashed border-slate-300 dark:border-darkborder rounded-2xl p-8 flex flex-col items-center justify-center text-center cursor-pointer hover:border-brand-500 transition group bg-slate-50/50 dark:bg-darkbg/30">
-              <div className="w-12 h-12 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 flex items-center justify-center mb-3 group-hover:scale-110 transition">
+            <div className="border-2 border-dashed border-slate-300 dark:border-darkborder rounded-2xl p-6 flex flex-col items-center justify-center text-center bg-slate-50/50 dark:bg-darkbg/30">
+              <div className="w-12 h-12 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 flex items-center justify-center mb-3">
                 <UploadCloud className="w-6 h-6" />
               </div>
-              <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-                Pilih Foto atau Ambil Kamera
-              </span>
-              <span className="text-xs text-slate-400 mt-1">
-                Mendukung format JPG, PNG, WEBP
-              </span>
-              <input
-                type="file"
-                accept="image/*"
-                capture="environment"
-                onChange={handleFileSelect}
-                className="hidden"
-              />
-            </label>
+
+              {scanType === 'receipt' ? (
+                <>
+                  <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                    Pilih Foto atau Ambil Kamera
+                  </span>
+                  <span className="text-xs text-slate-400 mt-1 mb-4">
+                    Mendukung format JPG, PNG, WEBP
+                  </span>
+                  <div className="flex flex-col sm:flex-row gap-2 w-full max-w-xs">
+                    <label className="flex-1 py-2.5 px-3 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-xs font-bold cursor-pointer transition flex items-center justify-center gap-1.5">
+                      <UploadCloud className="w-4 h-4" />
+                      <span>Pilih Foto</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileSelect}
+                        className="hidden"
+                      />
+                    </label>
+                    <label className="flex-1 py-2.5 px-3 rounded-xl bg-white dark:bg-darkcard border border-slate-200 dark:border-darkborder text-slate-700 dark:text-slate-200 text-xs font-bold cursor-pointer transition flex items-center justify-center gap-1.5 hover:border-brand-500">
+                      <Camera className="w-4 h-4" />
+                      <span>Kamera</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        capture="environment"
+                        onChange={handleFileSelect}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                    Pilih File Screenshot
+                  </span>
+                  <span className="text-xs text-slate-400 mt-1 mb-4">
+                    Pilih file gambar dari galeri / file manager (JPG, PNG, WEBP)
+                  </span>
+                  <label className="inline-flex py-2.5 px-5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-xs font-bold cursor-pointer transition items-center gap-2">
+                    <UploadCloud className="w-4 h-4" />
+                    <span>Pilih File</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileSelect}
+                      className="hidden"
+                    />
+                  </label>
+                </>
+              )}
+            </div>
           ) : (
             <div className="space-y-4">
               {/* Image Preview Thumbnail */}

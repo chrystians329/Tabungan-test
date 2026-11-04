@@ -66,7 +66,7 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
     >
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm animate-fade-in"
+        className="absolute inset-0 bg-slate-900/60 animate-fade-in"
         onClick={onClose}
       />
 
@@ -164,7 +164,7 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
               <span
                 className={`w-2 h-2 rounded-full ${
                   settings.syncEnabled
-                    ? 'bg-brand-500 animate-pulse'
+                    ? 'bg-brand-500'
                     : 'bg-slate-300 dark:bg-slate-600'
                 }`}
               />
@@ -192,6 +192,9 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
                   <Sun className="w-4 h-4 text-amber-500" />
                 )}
                 <span>Mode {theme === 'light' ? 'Gelap' : 'Terang'}</span>
+              </span>
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-darkbg text-slate-500 dark:text-slate-400">
+                {theme === 'light' ? 'Terang' : 'Gelap'}
               </span>
             </button>
           </div>

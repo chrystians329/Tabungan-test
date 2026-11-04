@@ -69,7 +69,7 @@ export const CloudSyncModal: React.FC<CloudSyncModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-sm transition-all">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 transition-all">
       <div className="w-full max-w-lg bg-white dark:bg-darkcard rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200 dark:border-darkborder overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-darkborder">
           <div className="flex items-center space-x-2">
@@ -93,12 +93,12 @@ export const CloudSyncModal: React.FC<CloudSyncModalProps> = ({
               <Laptop className="w-6 h-6 text-brand-600 dark:text-brand-400 mb-1" />
               <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">Desktop</span>
             </div>
-            <ArrowRightLeft className="w-5 h-5 text-brand-500 animate-pulse" />
+            <ArrowRightLeft className="w-5 h-5 text-brand-500" />
             <div className="flex flex-col items-center">
               <Cloud className="w-6 h-6 text-brand-600 dark:text-brand-400 mb-1" />
               <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">Cloud Realtime</span>
             </div>
-            <ArrowRightLeft className="w-5 h-5 text-brand-500 animate-pulse" />
+            <ArrowRightLeft className="w-5 h-5 text-brand-500" />
             <div className="flex flex-col items-center">
               <Smartphone className="w-6 h-6 text-brand-600 dark:text-brand-400 mb-1" />
               <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">Aplikasi HP</span>
@@ -111,7 +111,7 @@ export const CloudSyncModal: React.FC<CloudSyncModalProps> = ({
             <span className="font-bold text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
               <span
                 className={`w-2 h-2 rounded-full ${
-                  settings.syncEnabled ? 'bg-brand-500 animate-pulse' : 'bg-slate-300 dark:bg-slate-600'
+                  settings.syncEnabled ? 'bg-brand-500' : 'bg-slate-300 dark:bg-slate-600'
                 }`}
               />
               {settings.syncEnabled
