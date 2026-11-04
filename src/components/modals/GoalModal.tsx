@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Target, Image as ImageIcon, AlertCircle } from 'lucide-react';
 import { useFinance } from '../../context/FinanceContext';
 import { Goal, GoalPriority } from '../../types';
+import { useModalTransition } from '../../hooks/useModalTransition';
 
 interface GoalModalProps {
   isOpen: boolean;
@@ -50,7 +51,14 @@ export const GoalModal: React.FC<GoalModalProps> = ({
   const [imageUrl, setImageUrl] = useState(PRESET_IMAGES[0].url);
   const [notes, setNotes] = useState('');
 
+  // Tetap mounted selama animasi close supaya tidak langsung hilang
+  const [mounted, isClosing] = useModalTransition(isOpen);
+
   useEffect(() => {
+    // Hanya isi ulang form saat modal dibuka (saat menutup form sengaja dibiarkan
+    // supaya isinya tidak mendadak kosong selama animasi close)
+    if (!isOpen) return;
+
     if (editingGoal) {
       setName(editingGoal.name);
       setTargetAmountStr(new Intl.NumberFormat('id-ID').format(editingGoal.targetAmount));
@@ -68,10 +76,11 @@ export const GoalModal: React.FC<GoalModalProps> = ({
     }
   }, [editingGoal, isOpen]);
 
-  if (!isOpen) return null;
+  if (!mounted) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isClosing) return;
     const targetAmount = Number(targetAmountStr.replace(/\D/g, ''));
     if (!name.trim()) {
       alert('Masukkan nama target tabungan.');
@@ -121,8 +130,16 @@ export const GoalModal: React.FC<GoalModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 transition-all">
-      <div className="w-full max-w-lg bg-white dark:bg-darkcard rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200 dark:border-darkborder overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+    <div
+      className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 ${
+        isClosing ? 'fade-out pointer-events-none' : 'animate-fade-in'
+      }`}
+    >
+      <div
+        className={`w-full max-w-lg bg-white dark:bg-darkcard rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200 dark:border-darkborder overflow-hidden ${
+          isClosing ? 'modal-out pointer-events-none' : 'modal-in'
+        }`}
+      >
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-darkborder">
           <div className="flex items-center space-x-2">
             <Target className="w-5 h-5 text-brand-500" />
@@ -173,6 +190,7 @@ export const GoalModal: React.FC<GoalModalProps> = ({
               </span>
               <input
                 type="text"
+                inputMode="numeric"
                 value={targetAmountStr}
                 onChange={handleAmountChange}
                 placeholder="0"

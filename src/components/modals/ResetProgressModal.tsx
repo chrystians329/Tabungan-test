@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, RotateCcw, AlertTriangle, CheckCircle2, Loader2 } from 'lucide-react';
 import { useFinance } from '../../context/FinanceContext';
 import { formatRupiah } from '../../utils/formatters';
+import { useModalTransition } from '../../hooks/useModalTransition';
 
 interface ResetProgressModalProps {
   isOpen: boolean;
@@ -14,9 +15,13 @@ export const ResetProgressModal: React.FC<ResetProgressModalProps> = ({ isOpen, 
   const [isResetting, setIsResetting] = useState(false);
   const [done, setDone] = useState(false);
 
-  if (!isOpen) return null;
+  // Tetap mounted selama animasi close supaya tidak langsung hilang
+  const [mounted, isClosing] = useModalTransition(isOpen);
+
+  if (!mounted) return null;
 
   const handleReset = () => {
+    if (isClosing) return;
     if (confirmText.trim().toUpperCase() !== 'RESET') {
       alert('Ketik "RESET" pada kolom konfirmasi untuk melanjutkan.');
       return;
@@ -36,8 +41,16 @@ export const ResetProgressModal: React.FC<ResetProgressModalProps> = ({ isOpen, 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60">
-      <div className="w-full max-w-md bg-white dark:bg-darkcard rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200 dark:border-darkborder overflow-hidden modal-in">
+    <div
+      className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 ${
+        isClosing ? 'fade-out pointer-events-none' : 'animate-fade-in'
+      }`}
+    >
+      <div
+        className={`w-full max-w-md bg-white dark:bg-darkcard rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200 dark:border-darkborder overflow-hidden ${
+          isClosing ? 'modal-out pointer-events-none' : 'modal-in'
+        }`}
+      >
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-darkborder">
           <div className="flex items-center space-x-2">
             <RotateCcw className="w-5 h-5 text-rose-500" />

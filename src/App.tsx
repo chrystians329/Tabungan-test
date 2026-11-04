@@ -23,6 +23,7 @@ import { ResetProgressModal } from './components/modals/ResetProgressModal';
 
 // Types
 import { Transaction, Wallet, Goal, TransactionType } from './types';
+import { useModalTransition } from './hooks/useModalTransition';
 import { ArrowDownLeft, ArrowUpRight, ArrowLeftRight, ScanLine, X } from 'lucide-react';
 
 const AppContent: React.FC = () => {
@@ -54,6 +55,11 @@ const AppContent: React.FC = () => {
 
   // Mobile Quick Action Drawer / Bottom Sheet
   const [isMobileQuickMenuOpen, setIsMobileQuickMenuOpen] = useState(false);
+  // Tetap mounted selama animasi close supaya sheet tidak langsung hilang
+  const [quickMenuMounted, quickMenuClosing] = useModalTransition(
+    isMobileQuickMenuOpen,
+    220
+  );
 
   // Handlers
   const handleOpenNewTransaction = (type: TransactionType = 'expense') => {
@@ -220,13 +226,17 @@ const AppContent: React.FC = () => {
       />
 
       {/* Mobile Quick Action Drawer */}
-      {isMobileQuickMenuOpen && (
+      {quickMenuMounted && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center p-0 bg-slate-900/60 lg:hidden"
+          className={`fixed inset-0 z-50 flex items-end justify-center p-0 bg-slate-900/60 lg:hidden ${
+            quickMenuClosing ? 'fade-out pointer-events-none' : 'animate-fade-in'
+          }`}
           onClick={() => setIsMobileQuickMenuOpen(false)}
         >
           <div
-            className="w-full bg-white dark:bg-darkcard rounded-t-3xl shadow-2xl border-t border-slate-200 dark:border-darkborder p-6 pb-safe space-y-4 sheet-in"
+            className={`w-full bg-white dark:bg-darkcard rounded-t-3xl shadow-2xl border-t border-slate-200 dark:border-darkborder p-6 pb-safe space-y-4 ${
+              quickMenuClosing ? 'sheet-out pointer-events-none' : 'sheet-in'
+            }`}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">

@@ -18,6 +18,7 @@ import {
 import { useFinance } from '../context/FinanceContext';
 import { ActiveTab } from './Sidebar';
 import { formatRupiah } from '../utils/formatters';
+import { useModalTransition } from '../hooks/useModalTransition';
 
 interface MenuDrawerProps {
   isOpen: boolean;
@@ -42,7 +43,10 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
 }) => {
   const { breakdown, settings, theme, toggleTheme, lastRemoteSyncAt } = useFinance();
 
-  if (!isOpen) return null;
+  // Tetap mounted selama animasi close supaya drawer tidak langsung hilang
+  const [mounted, isClosing] = useModalTransition(isOpen, 220);
+
+  if (!mounted) return null;
 
   const goTab = (tab: ActiveTab) => {
     setActiveTab(tab);
@@ -66,12 +70,18 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
     >
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-slate-900/60 animate-fade-in"
+        className={`absolute inset-0 bg-slate-900/60 ${
+          isClosing ? 'fade-out pointer-events-none' : 'animate-fade-in'
+        }`}
         onClick={onClose}
       />
 
       {/* Drawer panel */}
-      <aside className="relative w-[85%] max-w-xs h-full bg-white dark:bg-darkcard border-r border-slate-200 dark:border-darkborder shadow-2xl flex flex-col animate-slide-in-left">
+      <aside
+        className={`relative w-[85%] max-w-xs h-full bg-white dark:bg-darkcard border-r border-slate-200 dark:border-darkborder shadow-2xl flex flex-col ${
+          isClosing ? 'animate-slide-out-left pointer-events-none' : 'animate-slide-in-left'
+        }`}
+      >
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-4 border-b border-slate-200 dark:border-darkborder">
           <div className="flex items-center space-x-2.5">

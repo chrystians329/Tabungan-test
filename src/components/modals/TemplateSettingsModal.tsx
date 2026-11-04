@@ -4,6 +4,7 @@ import { useFinance } from '../../context/FinanceContext';
 import { IncomeTemplate } from '../../types';
 import { INCOME_CATEGORIES } from '../../constants/categories';
 import { formatRupiah } from '../../utils/formatters';
+import { useModalTransition } from '../../hooks/useModalTransition';
 
 interface TemplateSettingsModalProps {
   isOpen: boolean;
@@ -29,7 +30,10 @@ export const TemplateSettingsModal: React.FC<TemplateSettingsModalProps> = ({
   const [form, setForm] = useState(EMPTY_FORM);
   const [isFormOpen, setIsFormOpen] = useState(false);
 
-  if (!isOpen) return null;
+  // Tetap mounted selama animasi close supaya tidak langsung hilang
+  const [mounted, isClosing] = useModalTransition(isOpen);
+
+  if (!mounted) return null;
 
   const startEdit = (tpl: IncomeTemplate) => {
     setForm({
@@ -63,6 +67,7 @@ export const TemplateSettingsModal: React.FC<TemplateSettingsModalProps> = ({
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isClosing) return;
     const amount = Number(form.amountStr.replace(/\D/g, '')) || 0;
     if (!form.name.trim()) {
       alert('Nama template wajib diisi.');
@@ -97,8 +102,16 @@ export const TemplateSettingsModal: React.FC<TemplateSettingsModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60">
-      <div className="w-full max-w-lg bg-white dark:bg-darkcard rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200 dark:border-darkborder overflow-hidden modal-in">
+    <div
+      className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 ${
+        isClosing ? 'fade-out pointer-events-none' : 'animate-fade-in'
+      }`}
+    >
+      <div
+        className={`w-full max-w-lg bg-white dark:bg-darkcard rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200 dark:border-darkborder overflow-hidden ${
+          isClosing ? 'modal-out pointer-events-none' : 'modal-in'
+        }`}
+      >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-darkborder">
           <div className="flex items-center space-x-2">
@@ -207,6 +220,7 @@ export const TemplateSettingsModal: React.FC<TemplateSettingsModalProps> = ({
                   </label>
                   <input
                     type="text"
+                    inputMode="numeric"
                     value={form.amountStr}
                     onChange={(e) => handleAmountChange(e.target.value)}
                     placeholder="0"

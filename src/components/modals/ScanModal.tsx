@@ -16,6 +16,7 @@ import { scanImageOCR } from '../../utils/ocrScanner';
 import { OCRResult } from '../../types';
 import { formatRupiah } from '../../utils/formatters';
 import { useFinance } from '../../context/FinanceContext';
+import { useModalTransition } from '../../hooks/useModalTransition';
 
 interface ScanModalProps {
   isOpen: boolean;
@@ -44,9 +45,13 @@ export const ScanModal: React.FC<ScanModalProps> = ({
   const recordedRef = useRef(false);
   const previewUrlRef = useRef<string | null>(null);
 
-  // Reset state setiap modal dibuka / ditutup (bug: preview lama tertinggal)
+  // Tetap mounted selama animasi close supaya tidak langsung hilang
+  const [mounted, isClosing] = useModalTransition(isOpen);
+
+  // Reset state setiap modal dibuka / benar-benar tertutup (bug: preview lama tertinggal)
+  // Sengaja TIDAK dijalankan selama animasi close supaya isi modal tidak mendadak kosong.
   useEffect(() => {
-    if (!isOpen) {
+    if (!mounted || isOpen) {
       if (previewUrlRef.current) {
         URL.revokeObjectURL(previewUrlRef.current);
         previewUrlRef.current = null;
@@ -57,12 +62,10 @@ export const ScanModal: React.FC<ScanModalProps> = ({
       setProgressPercent(0);
       setProgressMsg('');
       recordedRef.current = false;
-    } else {
-      recordedRef.current = false;
     }
-  }, [isOpen]);
+  }, [mounted, isOpen]);
 
-  if (!isOpen) return null;
+  if (!mounted) return null;
 
   const recordHistory = (status: 'saved' | 'discarded') => {
     if (recordedRef.current || !scanResult) return;
@@ -114,7 +117,7 @@ export const ScanModal: React.FC<ScanModalProps> = ({
   };
 
   const handleApply = () => {
-    if (!scanResult) return;
+    if (isClosing || !scanResult) return;
     recordHistory('saved');
     onConfirmTransaction({
       amount: scanResult.amount || 0,
@@ -138,8 +141,16 @@ export const ScanModal: React.FC<ScanModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 transition-all">
-      <div className="w-full max-w-lg bg-white dark:bg-darkcard rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200 dark:border-darkborder overflow-hidden modal-in">
+    <div
+      className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 ${
+        isClosing ? 'fade-out pointer-events-none' : 'animate-fade-in'
+      }`}
+    >
+      <div
+        className={`w-full max-w-lg bg-white dark:bg-darkcard rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200 dark:border-darkborder overflow-hidden ${
+          isClosing ? 'modal-out pointer-events-none' : 'modal-in'
+        }`}
+      >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-darkborder">
           <div className="flex items-center space-x-2">

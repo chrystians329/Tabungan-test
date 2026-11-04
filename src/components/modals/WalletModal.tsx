@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Wallet as WalletIcon, Smartphone, Landmark } from 'lucide-react';
 import { useFinance } from '../../context/FinanceContext';
 import { Wallet, WalletType } from '../../types';
+import { useModalTransition } from '../../hooks/useModalTransition';
 
 interface WalletModalProps {
   isOpen: boolean;
@@ -22,7 +23,14 @@ export const WalletModal: React.FC<WalletModalProps> = ({
   const [accountNumber, setAccountNumber] = useState('');
   const [color, setColor] = useState('#10B981');
 
+  // Tetap mounted selama animasi close supaya tidak langsung hilang
+  const [mounted, isClosing] = useModalTransition(isOpen);
+
   useEffect(() => {
+    // Hanya isi ulang form saat modal dibuka (saat menutup form sengaja dibiarkan
+    // supaya isinya tidak mendadak kosong selama animasi close)
+    if (!isOpen) return;
+
     if (editingWallet) {
       setName(editingWallet.name);
       setType(editingWallet.type);
@@ -38,10 +46,11 @@ export const WalletModal: React.FC<WalletModalProps> = ({
     }
   }, [editingWallet, isOpen]);
 
-  if (!isOpen) return null;
+  if (!mounted) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isClosing) return;
     // Izinkan saldo negatif (hanya strip karakter non-angka, pertahankan tanda minus)
     const balance = Number(balanceStr.replace(/[^\d-]/g, '')) || 0;
     if (!name.trim()) {
@@ -82,8 +91,16 @@ export const WalletModal: React.FC<WalletModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 transition-all">
-      <div className="w-full max-w-md bg-white dark:bg-darkcard rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200 dark:border-darkborder overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+    <div
+      className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 ${
+        isClosing ? 'fade-out pointer-events-none' : 'animate-fade-in'
+      }`}
+    >
+      <div
+        className={`w-full max-w-md bg-white dark:bg-darkcard rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200 dark:border-darkborder overflow-hidden ${
+          isClosing ? 'modal-out pointer-events-none' : 'modal-in'
+        }`}
+      >
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-darkborder">
           <h3 className="text-base font-bold text-slate-900 dark:text-white">
             {editingWallet ? 'Edit Dompet / Rekening' : 'Tambah Dompet / Rekening Baru'}
@@ -187,9 +204,10 @@ export const WalletModal: React.FC<WalletModalProps> = ({
               </label>
               <input
                 type="text"
+                inputMode="numeric"
                 value={accountNumber}
                 onChange={(e) => setAccountNumber(e.target.value)}
-                placeholder="cth: 821-098-xxxx atau 0812-xxxx"
+                placeholder="cth: 081234567890"
                 className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-darkbg rounded-xl border border-slate-200 dark:border-darkborder text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 transition"
               />
             </div>

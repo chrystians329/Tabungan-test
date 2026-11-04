@@ -12,6 +12,7 @@ import {
 import { useFinance } from '../../context/FinanceContext';
 import { Transaction, TransactionType } from '../../types';
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '../../constants/categories';
+import { useModalTransition } from '../../hooks/useModalTransition';
 
 interface TransactionModalProps {
   isOpen: boolean;
@@ -43,7 +44,14 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
   // Editing hanya bila benar-benar punya id (hasil scan/template = transaksi baru)
   const isEditing = Boolean(editingTransaction && editingTransaction.id);
 
+  // Tetap mounted selama animasi close supaya tidak langsung hilang
+  const [mounted, isClosing] = useModalTransition(isOpen);
+
   useEffect(() => {
+    // Hanya isi ulang form saat modal dibuka (saat menutup form sengaja dibiarkan
+    // supaya isinya tidak mendadak kosong selama animasi close)
+    if (!isOpen) return;
+
     if (isEditing && editingTransaction) {
       setType(editingTransaction.type);
       setAmountStr(new Intl.NumberFormat('id-ID').format(editingTransaction.amount));
@@ -72,10 +80,11 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editingTransaction, prefillTransaction, initialType, isOpen]);
 
-  if (!isOpen) return null;
+  if (!mounted) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isClosing) return;
     const amount = Number(amountStr.replace(/\D/g, ''));
     if (!amount || amount <= 0) {
       alert('Masukkan nominal uang yang valid.');
@@ -141,8 +150,16 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
     category && !categories.includes(category) ? [category, ...categories] : categories;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 transition-all">
-      <div className="w-full max-w-lg bg-white dark:bg-darkcard rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200 dark:border-darkborder overflow-hidden modal-in">
+    <div
+      className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 ${
+        isClosing ? 'fade-out pointer-events-none' : 'animate-fade-in'
+      }`}
+    >
+      <div
+        className={`w-full max-w-lg bg-white dark:bg-darkcard rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200 dark:border-darkborder overflow-hidden ${
+          isClosing ? 'modal-out pointer-events-none' : 'modal-in'
+        }`}
+      >
         {/* Modal Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-darkborder">
           <h3 className="text-base font-bold text-slate-900 dark:text-white">
@@ -243,6 +260,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
               </span>
               <input
                 type="text"
+                inputMode="numeric"
                 value={amountStr}
                 onChange={handleAmountChange}
                 placeholder="0"

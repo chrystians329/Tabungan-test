@@ -4,6 +4,7 @@ import confetti from 'canvas-confetti';
 import { useFinance } from '../../context/FinanceContext';
 import { Goal } from '../../types';
 import { formatRupiah } from '../../utils/formatters';
+import { useModalTransition } from '../../hooks/useModalTransition';
 
 interface GoalActionModalProps {
   isOpen: boolean;
@@ -22,10 +23,14 @@ export const GoalActionModal: React.FC<GoalActionModalProps> = ({
   const [amountStr, setAmountStr] = useState('');
   const [note, setNote] = useState('');
 
-  if (!isOpen || !goal) return null;
+  // Tetap mounted selama animasi close supaya tidak langsung hilang
+  const [mounted, isClosing] = useModalTransition(isOpen);
+
+  if (!mounted || !goal) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isClosing) return;
     const amount = Number(amountStr.replace(/\D/g, ''));
     if (!amount || amount <= 0) {
       alert('Masukkan nominal uang yang valid.');
@@ -65,8 +70,16 @@ export const GoalActionModal: React.FC<GoalActionModalProps> = ({
   const isDeposit = mode === 'deposit';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 transition-all">
-      <div className="w-full max-w-md bg-white dark:bg-darkcard rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200 dark:border-darkborder overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+    <div
+      className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 ${
+        isClosing ? 'fade-out pointer-events-none' : 'animate-fade-in'
+      }`}
+    >
+      <div
+        className={`w-full max-w-md bg-white dark:bg-darkcard rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200 dark:border-darkborder overflow-hidden ${
+          isClosing ? 'modal-out pointer-events-none' : 'modal-in'
+        }`}
+      >
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-darkborder">
           <div className="flex items-center space-x-2">
             {isDeposit ? (
@@ -116,6 +129,7 @@ export const GoalActionModal: React.FC<GoalActionModalProps> = ({
               </span>
               <input
                 type="text"
+                inputMode="numeric"
                 value={amountStr}
                 onChange={handleAmountChange}
                 placeholder="0"

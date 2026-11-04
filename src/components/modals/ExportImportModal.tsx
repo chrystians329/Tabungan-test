@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { useFinance } from '../../context/FinanceContext';
 import { exportToExcel, exportToJSON, parseExcelOrJSONFile } from '../../utils/excel';
+import { useModalTransition } from '../../hooks/useModalTransition';
 
 interface ExportImportModalProps {
   isOpen: boolean;
@@ -26,15 +27,19 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
   const [importStatus, setImportStatus] = useState<string | null>(null);
   const [importPreview, setImportPreview] = useState<any | null>(null);
 
-  // Bersihkan state preview setiap modal ditutup/dibuka (bug: preview basi ikut terimport)
+  // Tetap mounted selama animasi close supaya tidak langsung hilang
+  const [mounted, isClosing] = useModalTransition(isOpen);
+
+  // Bersihkan state preview setiap modal dibuka / benar-benar tertutup (bug: preview basi ikut terimport)
+  // Sengaja TIDAK dijalankan selama animasi close supaya isi modal tidak mendadak kosong.
   useEffect(() => {
-    if (!isOpen) {
+    if (!mounted || isOpen) {
       setImportPreview(null);
       setImportStatus(null);
     }
-  }, [isOpen]);
+  }, [mounted, isOpen]);
 
-  if (!isOpen) return null;
+  if (!mounted) return null;
 
   const handleExportExcel = () => {
     exportToExcel({
@@ -76,15 +81,23 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
   };
 
   const handleConfirmImport = () => {
-    if (!importPreview) return;
+    if (isClosing || !importPreview) return;
     importAllData(importPreview);
     alert('Data berhasil diimport ke aplikasi!');
     onClose();
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 transition-all">
-      <div className="w-full max-w-lg bg-white dark:bg-darkcard rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200 dark:border-darkborder overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+    <div
+      className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 ${
+        isClosing ? 'fade-out pointer-events-none' : 'animate-fade-in'
+      }`}
+    >
+      <div
+        className={`w-full max-w-lg bg-white dark:bg-darkcard rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200 dark:border-darkborder overflow-hidden ${
+          isClosing ? 'modal-out pointer-events-none' : 'modal-in'
+        }`}
+      >
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-darkborder">
           <div className="flex items-center space-x-2">
             <FileSpreadsheet className="w-5 h-5 text-emerald-500" />
