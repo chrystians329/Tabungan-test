@@ -12,6 +12,7 @@ import {
   Sparkles,
   TrendingUp,
   ChevronRight,
+  Trash2,
 } from 'lucide-react';
 import { useFinance } from '../context/FinanceContext';
 import { formatRupiah, formatCompactRupiah, formatDateIndo, getPriorityBadge } from '../utils/formatters';
@@ -23,6 +24,7 @@ interface DashboardViewProps {
   onOpenScanModal: () => void;
   onOpenGoalModal: () => void;
   onOpenGoalAction: (goal: Goal, mode: 'deposit' | 'withdraw') => void;
+  onDeleteGoal: (goalId: string) => void;
   setActiveTab: (tab: ActiveTab) => void;
 }
 
@@ -31,6 +33,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onOpenScanModal,
   onOpenGoalModal,
   onOpenGoalAction,
+  onDeleteGoal,
   setActiveTab,
 }) => {
   const { breakdown, wallets, transactions, goals } = useFinance();
@@ -367,11 +370,26 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
                 {/* Quick Deposit to this goal */}
                 <button
-                  onClick={() => onOpenGoalAction(goal, 'deposit')}
-                  className="mt-3 w-full py-2 rounded-xl bg-brand-500/10 hover:bg-brand-500 text-brand-600 dark:text-brand-400 hover:text-white text-xs font-semibold transition flex items-center justify-center gap-1.5"
+                  onClick={() =>
+                    percentage >= 100 ? onDeleteGoal(goal.id) : onOpenGoalAction(goal, 'deposit')
+                  }
+                  className={`mt-3 w-full py-2 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-1.5 ${
+                    percentage >= 100
+                      ? 'bg-rose-500/10 hover:bg-rose-500 text-rose-600 dark:text-rose-400 hover:text-white'
+                      : 'bg-brand-500/10 hover:bg-brand-500 text-brand-600 dark:text-brand-400 hover:text-white'
+                  }`}
                 >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Nabung ke Sini</span>
+                  {percentage >= 100 ? (
+                    <>
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Hapus Goals</span>
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Nabung ke Sini</span>
+                    </>
+                  )}
                 </button>
               </div>
             );

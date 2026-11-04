@@ -41,3 +41,210 @@
   padding-top: env(safe-area-inset-top, 16px);
 }
 
+/* ================= Animations ================= */
+@keyframes kk-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes kk-zoom-modal {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes kk-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes kk-slide-left {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes kk-sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes kk-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  70% {
+    transform: scale(1.04);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes kk-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes kk-drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(40px, -30px, 0) scale(1.12);
+  }
+}
+
+@keyframes kk-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Kompatibilitas dengan class gaya tailwind-animate yang dipakai modal lama */
+.animate-in {
+  animation-duration: 220ms;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  animation-fill-mode: both;
+}
+
+.animate-in.fade-in {
+  animation-name: kk-fade-in;
+}
+
+.animate-in.zoom-in-95 {
+  animation-name: kk-zoom-modal;
+}
+
+/* Modal baru */
+.modal-in {
+  animation: kk-zoom-modal 240ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Bottom sheet mobile */
+.sheet-in {
+  animation: kk-sheet-up 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Drawer hamburger */
+.animate-slide-in-left {
+  animation: kk-slide-left 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-fade-in {
+  animation: kk-fade-in 200ms ease-out both;
+}
+
+/* Transisi antar halaman / tab */
+.view-enter {
+  animation: kk-fade-up 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Elemen masuk bertahap (stagger via inline animation-delay) */
+.fade-up {
+  animation: kk-fade-up 380ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.empty-pop {
+  animation: kk-pop 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.float-slow {
+  animation: kk-float 3.4s ease-in-out infinite;
+}
+
+.shimmer-text {
+  background: linear-gradient(90deg, currentColor 20%, rgba(255, 255, 255, 0.85) 50%, currentColor 80%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: kk-shimmer 4s linear infinite;
+}
+
+/* Latar ambient bergerak halus agar tampilan tidak terasa kosong */
+.ambient-bg {
+  overflow: hidden;
+}
+
+.ambient-orb {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(70px);
+  opacity: 0.35;
+  animation: kk-drift 18s ease-in-out infinite;
+}
+
+.ambient-orb-1 {
+  top: -80px;
+  left: -60px;
+  width: 320px;
+  height: 320px;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.55), transparent 70%);
+}
+
+.ambient-orb-2 {
+  top: 40%;
+  right: -100px;
+  width: 360px;
+  height: 360px;
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.35), transparent 70%);
+  animation-delay: -6s;
+  animation-duration: 22s;
+}
+
+.ambient-orb-3 {
+  bottom: -60px;
+  left: 30%;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(251, 191, 36, 0.28), transparent 70%);
+  animation-delay: -11s;
+  animation-duration: 26s;
+}
+
+.dark .ambient-orb {
+  opacity: 0.22;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   X,
   FileSpreadsheet,
@@ -21,9 +21,18 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
   isOpen,
   onClose,
 }) => {
-  const { transactions, wallets, goals, breakdown, importAllData, resetAllData, resetToZero } = useFinance();
+  const { transactions, wallets, goals, breakdown, importAllData, resetAllData, resetTotalProgress } =
+    useFinance();
   const [importStatus, setImportStatus] = useState<string | null>(null);
   const [importPreview, setImportPreview] = useState<any | null>(null);
+
+  // Bersihkan state preview setiap modal ditutup/dibuka (bug: preview basi ikut terimport)
+  useEffect(() => {
+    if (!isOpen) {
+      setImportPreview(null);
+      setImportStatus(null);
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -58,7 +67,11 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
       );
     } catch (err) {
       console.error(err);
+      setImportPreview(null);
+      setImportStatus(null);
       alert('Gagal membaca format file. Pastikan format file sesuai (.xlsx, .csv, atau .json).');
+    } finally {
+      e.target.value = '';
     }
   };
 
@@ -190,7 +203,7 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
             <button
               onClick={() => {
                 if (confirm('Yakin ingin mereset semua saldo dompet, tabungan goals, dan transaksi menjadi Rp 0?')) {
-                  resetToZero();
+                  resetTotalProgress();
                   alert('Semua saldo dan riwayat berhasil direset menjadi Rp 0!');
                   onClose();
                 }

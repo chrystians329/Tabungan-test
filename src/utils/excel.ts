@@ -50,6 +50,7 @@ export const exportToExcel = ({
 
   // 3. Sheet Dompet
   const walletRows = wallets.map((w) => ({
+    ID: w.id,
     'Nama Dompet': w.name,
     Tipe: w.type === 'cash' ? 'Cash / Tunai' : w.type === 'ewallet' ? 'E-Wallet' : 'Bank',
     'Nomor Rekening / Akun': w.accountNumber || '-',
@@ -91,6 +92,18 @@ export const exportToJSON = (data: {
   URL.revokeObjectURL(url);
 };
 
+/** Konversi serial tanggal Excel (angka) menjadi string YYYY-MM-DD */
+const excelDateToISO = (value: unknown): string | undefined => {
+  if (!value || value === '-') return undefined;
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    const ms = Date.UTC(1899, 11, 30) + Math.round(value) * 86400000;
+    return new Date(ms).toISOString().split('T')[0];
+  }
+  const str = String(value).trim();
+  if (!str) return undefined;
+  return str;
+};
+
 export const parseExcelOrJSONFile = async (
   file: File
 ): Promise<{
@@ -100,7 +113,15 @@ export const parseExcelOrJSONFile = async (
 }> => {
   if (file.name.endsWith('.json')) {
     const text = await file.text();
-    return JSON.parse(text);
+    const parsed = JSON.parse(text);
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      throw new Error('Format file JSON tidak sesuai dengan backup KayaKu.');
+    }
+    return {
+      transactions: Array.isArray(parsed.transactions) ? parsed.transactions : undefined,
+      wallets: Array.isArray(parsed.wallets) ? parsed.wallets : undefined,
+      goals: Array.isArray(parsed.goals) ? parsed.goals : undefined,
+    };
   }
 
   // Handle Excel / CSV
@@ -119,27 +140,36 @@ export const parseExcelOrJSONFile = async (
     const rows = XLSX.utils.sheet_to_json<any>(sheet);
 
     if (sheetName.toLowerCase().includes('transaksi')) {
-      result.transactions = rows.map((r, i) => ({
-        id: `import_tx_${Date.now()}_${i}`,
-        date: r['Tanggal'] || new Date().toISOString().split('T')[0],
-        type:
-          r['Tipe'] === 'Pemasukan'
-            ? 'income'
-            : r['Tipe'] === 'Pengeluaran'
-            ? 'expense'
-            : 'transfer',
-        category: r['Kategori'] || 'Lain-lain',
-        walletId: 'default_cash',
-        amount: Number(r['Nominal (Rp)']) || 0,
-        merchant: r['Merchant'] || '',
-        note: r['Catatan'] || '',
-        createdAt: new Date().toISOString(),
-      }));
+      result.transactions = rows.map((r, i) => {
+        const fromName =
+          r['Dompet Asal'] && r['Dompet Asal'] !== 'Dompet Dihapus' ? String(r['Dompet Asal']) : '';
+        const toName =
+          r['Dompet Tujuan (Transfer)'] && r['Dompet Tujuan (Transfer)'] !== '-'
+            ? String(r['Dompet Tujuan (Transfer)'])
+            : '';
+        return {
+          id: `import_tx_${Date.now()}_${i}`,
+          date: excelDateToISO(r['Tanggal']) || new Date().toISOString().split('T')[0],
+          type:
+            r['Tipe'] === 'Pemasukan'
+              ? ('income' as const)
+              : r['Tipe'] === 'Pengeluaran'
+              ? ('expense' as const)
+              : ('transfer' as const),
+          category: r['Kategori'] || 'Lain-lain',
+          walletId: fromName ? `name:${fromName}` : '',
+          toWalletId: toName ? `name:${toName}` : undefined,
+          amount: Number(r['Nominal (Rp)']) || 0,
+          merchant: r['Merchant'] && r['Merchant'] !== '-' ? r['Merchant'] : '',
+          note: r['Catatan'] && r['Catatan'] !== '-' ? r['Catatan'] : '',
+          createdAt: new Date().toISOString(),
+        } as Transaction;
+      });
     }
 
     if (sheetName.toLowerCase().includes('dompet')) {
       result.wallets = rows.map((r, i) => ({
-        id: `import_w_${Date.now()}_${i}`,
+        id: r['ID'] ? String(r['ID']) : `import_w_${i + 1}`,
         name: r['Nama Dompet'] || `Dompet ${i + 1}`,
         type:
           String(r['Tipe']).toLowerCase().includes('bank')
@@ -154,24 +184,30 @@ export const parseExcelOrJSONFile = async (
     }
 
     if (sheetName.toLowerCase().includes('goal')) {
-      result.goals = rows.map((r, i) => ({
-        id: `import_g_${Date.now()}_${i}`,
-        name: r['Nama Target'] || `Goal ${i + 1}`,
-        targetAmount: Number(r['Target (Rp)']) || 1000000,
-        currentAmount: Number(r['Terkumpul (Rp)']) || 0,
-        priority:
-          String(r['Prioritas']).toLowerCase().includes('urgent') || String(r['Prioritas']).toLowerCase().includes('mendesak')
-            ? 'urgent'
-            : String(r['Prioritas']).toLowerCase().includes('santai') || String(r['Prioritas']).toLowerCase().includes('tidak penting')
-            ? 'santai'
-            : 'biasa',
-        deadline: r['Deadline'] !== '-' ? r['Deadline'] : undefined,
-        notes: r['Catatan'] || '',
-        createdAt: new Date().toISOString(),
-      }));
+      result.goals = rows.map((r, i) => {
+        const priorityRaw = String(r['Prioritas'] || '').toLowerCase();
+        return {
+          id: `import_g_${i + 1}`,
+          name: r['Nama Target'] || `Goal ${i + 1}`,
+          targetAmount: Number(r['Target (Rp)']) || 1000000,
+          currentAmount: Number(r['Terkumpul (Rp)']) || 0,
+          priority:
+            priorityRaw.includes('urgent') || priorityRaw.includes('mendesak')
+              ? ('urgent' as const)
+              : priorityRaw.includes('santai') ||
+                priorityRaw.includes('tidak penting') ||
+                priorityRaw.includes('tidak terlalu')
+              ? ('santai' as const)
+              : ('biasa' as const),
+          deadline: excelDateToISO(r['Deadline']),
+          notes: r['Catatan'] && r['Catatan'] !== '-' ? r['Catatan'] : '',
+          createdAt: new Date().toISOString(),
+        } as Goal;
+      });
     }
   });
 
   return result;
 };
+
 

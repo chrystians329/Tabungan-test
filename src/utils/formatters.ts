@@ -30,7 +30,11 @@ export const formatCompactRupiah = (amount: number): string => {
 export const formatDateIndo = (dateStr: string): string => {
   if (!dateStr) return '';
   try {
-    const date = new Date(dateStr);
+    // 'YYYY-MM-DD' ditambahkan waktu lokal agar tidak bergeser hari (timezone UTC)
+    const date = /^\d{4}-\d{2}-\d{2}$/.test(dateStr)
+      ? new Date(`${dateStr}T00:00:00`)
+      : new Date(dateStr);
+    if (isNaN(date.getTime())) return dateStr;
     return new Intl.DateTimeFormat('id-ID', {
       day: 'numeric',
       month: 'short',

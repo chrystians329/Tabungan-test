@@ -5,11 +5,7 @@ import {
   WalletCards,
   Target,
   ScanLine,
-  FileSpreadsheet,
-  Cloud,
-  ChevronRight,
   TrendingUp,
-  Smartphone,
 } from 'lucide-react';
 import { useFinance } from '../context/FinanceContext';
 import { formatCompactRupiah } from '../utils/formatters';
@@ -19,19 +15,10 @@ export type ActiveTab = 'dashboard' | 'transactions' | 'wallets' | 'goals' | 'sc
 interface SidebarProps {
   activeTab: ActiveTab;
   setActiveTab: (tab: ActiveTab) => void;
-  onOpenSyncModal: () => void;
-  onOpenExportImport: () => void;
-  onOpenInstallModal: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({
-  activeTab,
-  setActiveTab,
-  onOpenSyncModal,
-  onOpenExportImport,
-  onOpenInstallModal,
-}) => {
-  const { breakdown, settings } = useFinance();
+export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => {
+  const { breakdown } = useFinance();
 
   const navItems = [
     {
@@ -74,18 +61,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
           Menu Utama
         </p>
 
-        {navItems.map((item) => {
+        {navItems.map((item, index) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
           return (
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
-              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition ${
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition fade-up ${
                 isActive
                   ? 'bg-brand-500/10 text-brand-600 dark:text-brand-400 font-semibold'
                   : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-darkbg/70'
               }`}
+              style={{ animationDelay: `${index * 45}ms` }}
             >
               <div className="flex items-center space-x-3">
                 <Icon
@@ -109,55 +97,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
           );
         })}
-
-        <div className="pt-6">
-          <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2">
-            Alat & Data
-          </p>
-
-          <button
-            onClick={onOpenExportImport}
-            className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-darkbg/70 transition"
-          >
-            <div className="flex items-center space-x-3">
-              <FileSpreadsheet className="w-4 h-4 text-emerald-500" />
-              <span>Export / Import Excel</span>
-            </div>
-            <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-          </button>
-
-          <button
-            onClick={onOpenSyncModal}
-            className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-darkbg/70 transition"
-          >
-            <div className="flex items-center space-x-3">
-              <Cloud className="w-4 h-4 text-brand-500" />
-              <span>Sinkronisasi Multi-Device</span>
-            </div>
-            <span
-              className={`w-2 h-2 rounded-full ${
-                settings.syncEnabled ? 'bg-brand-500 animate-pulse' : 'bg-slate-300 dark:bg-slate-600'
-              }`}
-            />
-          </button>
-
-          <button
-            onClick={onOpenInstallModal}
-            className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium text-brand-600 dark:text-brand-400 bg-brand-500/10 hover:bg-brand-500/20 border border-brand-500/20 transition"
-          >
-            <div className="flex items-center space-x-3">
-              <Smartphone className="w-4 h-4 text-brand-500" />
-              <span className="font-semibold">Pasang App di HP</span>
-            </div>
-            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-brand-500 text-white">
-              PWA
-            </span>
-          </button>
-        </div>
       </div>
 
       {/* Bottom Mini Card: Target Goals Teaser */}
-      <div className="p-4 border-t border-slate-200 dark:border-darkborder bg-slate-50/50 dark:bg-darkbg/40 m-3 rounded-2xl">
+      <div className="m-3 p-4 rounded-2xl border border-slate-200 dark:border-darkborder bg-slate-50/50 dark:bg-darkbg/40">
         <div className="flex items-center justify-between mb-2">
           <span className="text-xs font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
             <TrendingUp className="w-3.5 h-3.5 text-brand-500" />
@@ -180,4 +123,3 @@ export const Sidebar: React.FC<SidebarProps> = ({
     </aside>
   );
 };
-

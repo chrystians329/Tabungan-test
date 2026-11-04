@@ -114,7 +114,7 @@ export const WalletsView: React.FC<WalletsViewProps> = ({
                 : 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
             }`}
           >
-            {w.type}
+            {isCash ? 'Cash' : isEWallet ? 'E-Wallet' : 'Bank'}
           </span>
         </div>
       </div>

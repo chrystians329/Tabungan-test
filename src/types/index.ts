@@ -73,6 +73,9 @@ export interface AppSettings {
   supabaseAnonKey?: string;
   syncEnabled: boolean;
   lastSyncedAt?: string;
+  // Interval auto sinkron (ms). Default 4 detik.
+  syncIntervalMs?: number;
+  incomeTemplates?: IncomeTemplate[];
 }
 
 export interface OCRResult {
@@ -83,5 +86,29 @@ export interface OCRResult {
   category?: string;
   detectedType?: 'receipt' | 'ewallet';
   sourceWalletType?: WalletType;
+}
+
+export interface IncomeTemplate {
+  id: string;
+  name: string;
+  amount: number;
+  category: string;
+  merchant?: string;
+  note?: string;
+  walletId?: string;
+  createdAt: string;
+}
+
+export interface ScanHistoryItem {
+  id: string;
+  mode: 'receipt' | 'ewallet';
+  amount: number;
+  merchant: string;
+  date: string;
+  category: string;
+  sourceType?: WalletType;
+  rawText?: string;
+  status: 'saved' | 'discarded';
+  createdAt: string;
 }
 

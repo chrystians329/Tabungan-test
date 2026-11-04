@@ -1,43 +1,35 @@
 import React, { useState, useEffect } from 'react';
-import { X, ArrowDownLeft, ArrowUpRight, ArrowLeftRight, Calendar, Tag, Wallet as WalletIcon } from 'lucide-react';
+import {
+  X,
+  ArrowDownLeft,
+  ArrowUpRight,
+  ArrowLeftRight,
+  Calendar,
+  Tag,
+  Wallet as WalletIcon,
+  LayoutTemplate,
+} from 'lucide-react';
 import { useFinance } from '../../context/FinanceContext';
 import { Transaction, TransactionType } from '../../types';
+import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '../../constants/categories';
 
 interface TransactionModalProps {
   isOpen: boolean;
   onClose: () => void;
   initialType?: TransactionType;
   editingTransaction?: Transaction | null;
+  /** Data hasil scan / template yang di-prefill sebagai transaksi BARU */
+  prefillTransaction?: Transaction | null;
 }
-
-const EXPENSE_CATEGORIES = [
-  'Makanan & Minuman',
-  'Belanja & Groceries',
-  'Transportasi',
-  'Tagihan & Utilitas',
-  'Hiburan & Hobi',
-  'Kesehatan & Medis',
-  'Pendidikan',
-  'Lain-lain',
-];
-
-const INCOME_CATEGORIES = [
-  'Gaji Pokok',
-  'Bonus & THR',
-  'Freelance / Proyek',
-  'Investasi & Dividen',
-  'Hadiah & Hibah',
-  'Penjualan',
-  'Lain-lain',
-];
 
 export const TransactionModal: React.FC<TransactionModalProps> = ({
   isOpen,
   onClose,
   initialType = 'expense',
   editingTransaction = null,
+  prefillTransaction = null,
 }) => {
-  const { wallets, addTransaction, updateTransaction } = useFinance();
+  const { wallets, settings, addTransaction, updateTransaction } = useFinance();
 
   const [type, setType] = useState<TransactionType>(initialType);
   const [amountStr, setAmountStr] = useState('');
@@ -48,27 +40,37 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [note, setNote] = useState('');
 
+  // Editing hanya bila benar-benar punya id (hasil scan/template = transaksi baru)
+  const isEditing = Boolean(editingTransaction && editingTransaction.id);
+
   useEffect(() => {
-    if (editingTransaction) {
+    if (isEditing && editingTransaction) {
       setType(editingTransaction.type);
-      setAmountStr(String(editingTransaction.amount));
+      setAmountStr(new Intl.NumberFormat('id-ID').format(editingTransaction.amount));
       setWalletId(editingTransaction.walletId);
       setToWalletId(editingTransaction.toWalletId || '');
       setCategory(editingTransaction.category);
       setMerchant(editingTransaction.merchant || '');
       setDate(editingTransaction.date);
       setNote(editingTransaction.note);
-    } else {
-      setType(initialType);
-      setAmountStr('');
-      setWalletId(wallets[0]?.id || '');
-      setToWalletId(wallets[1]?.id || wallets[0]?.id || '');
-      setCategory(initialType === 'income' ? INCOME_CATEGORIES[0] : EXPENSE_CATEGORIES[0]);
-      setMerchant('');
-      setDate(new Date().toISOString().split('T')[0]);
-      setNote('');
+      return;
     }
-  }, [editingTransaction, initialType, wallets, isOpen]);
+
+    const source = prefillTransaction;
+    const nextType = source?.type || initialType;
+    setType(nextType);
+    setAmountStr(source?.amount ? new Intl.NumberFormat('id-ID').format(source.amount) : '');
+    setWalletId(source?.walletId || wallets[0]?.id || '');
+    setToWalletId(wallets[1]?.id || wallets[0]?.id || '');
+    setCategory(
+      source?.category ||
+        (nextType === 'income' ? INCOME_CATEGORIES[0] : EXPENSE_CATEGORIES[0])
+    );
+    setMerchant(source?.merchant || '');
+    setDate(source?.date || new Date().toISOString().split('T')[0]);
+    setNote(source?.note || '');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editingTransaction, prefillTransaction, initialType, isOpen]);
 
   if (!isOpen) return null;
 
@@ -88,7 +90,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
       return;
     }
 
-    if (editingTransaction) {
+    if (isEditing && editingTransaction) {
       updateTransaction(editingTransaction.id, {
         type,
         amount,
@@ -120,15 +122,31 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
     setAmountStr(raw ? new Intl.NumberFormat('id-ID').format(Number(raw)) : '');
   };
 
+  const incomeTemplates = settings.incomeTemplates || [];
+
+  const applyTemplate = (tpl: (typeof incomeTemplates)[number]) => {
+    setType('income');
+    setAmountStr(tpl.amount ? new Intl.NumberFormat('id-ID').format(tpl.amount) : '');
+    setCategory(tpl.category);
+    setMerchant(tpl.merchant || '');
+    setNote(tpl.note || '');
+    if (tpl.walletId && wallets.some((w) => w.id === tpl.walletId)) {
+      setWalletId(tpl.walletId);
+    }
+  };
+
   const categories = type === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
+  // Pastikan kategori hasil scan/OCR selalu tampil di dropdown
+  const categoryOptions =
+    category && !categories.includes(category) ? [category, ...categories] : categories;
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-sm transition-all">
-      <div className="w-full max-w-lg bg-white dark:bg-darkcard rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200 dark:border-darkborder overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <div className="w-full max-w-lg bg-white dark:bg-darkcard rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200 dark:border-darkborder overflow-hidden modal-in">
         {/* Modal Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-darkborder">
           <h3 className="text-base font-bold text-slate-900 dark:text-white">
-            {editingTransaction ? 'Edit Transaksi' : 'Catat Transaksi Baru'}
+            {isEditing ? 'Edit Transaksi' : 'Catat Transaksi Baru'}
           </h3>
           <button
             onClick={onClose}
@@ -186,6 +204,33 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
               <span>Transfer</span>
             </button>
           </div>
+
+          {/* Template Pemasukan (cepat, bisa diatur di hamburger menu) */}
+          {type === 'income' && incomeTemplates.length > 0 && (
+            <div>
+              <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5">
+                <LayoutTemplate className="w-3.5 h-3.5 text-brand-500" />
+                Template Pemasukan
+              </label>
+              <div className="flex flex-wrap gap-1.5">
+                {incomeTemplates.map((tpl) => (
+                  <button
+                    key={tpl.id}
+                    type="button"
+                    onClick={() => applyTemplate(tpl)}
+                    className="px-3 py-1.5 rounded-xl border border-brand-500/30 bg-brand-500/10 text-brand-700 dark:text-brand-300 text-[11px] font-bold hover:bg-brand-500 hover:text-white transition"
+                    title={`Isi otomatis: ${tpl.name}`}
+                  >
+                    {tpl.name}
+                    <span className="opacity-70 font-semibold">
+                      {' '}
+                      · {new Intl.NumberFormat('id-ID').format(tpl.amount)}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Amount Input */}
           <div>
@@ -268,7 +313,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                   onChange={(e) => setCategory(e.target.value)}
                   className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-darkbg rounded-xl border border-slate-200 dark:border-darkborder text-sm font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 transition appearance-none"
                 >
-                  {categories.map((c) => (
+                  {categoryOptions.map((c) => (
                     <option key={c} value={c}>
                       {c}
                     </option>
@@ -324,12 +369,17 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
           </div>
 
           {/* Submit Action */}
-          <div className="pt-2">
+          <div className="pt-2 space-y-2">
+            {!isEditing && prefillTransaction && (
+              <p className="text-[11px] text-center text-brand-600 dark:text-brand-400 bg-brand-500/10 border border-brand-500/20 rounded-xl py-2 px-3">
+                Data dari hasil scan siap disimpan sebagai transaksi baru.
+              </p>
+            )}
             <button
               type="submit"
               className="w-full py-3 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-semibold text-sm shadow-soft hover:shadow-glow transition"
             >
-              {editingTransaction ? 'Simpan Perubahan' : 'Catat Transaksi'}
+              {isEditing ? 'Simpan Perubahan' : 'Catat Transaksi'}
             </button>
           </div>
         </form>

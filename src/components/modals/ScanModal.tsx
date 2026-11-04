@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   X,
   ScanLine,
@@ -14,6 +14,7 @@ import {
 import { scanImageOCR } from '../../utils/ocrScanner';
 import { OCRResult } from '../../types';
 import { formatRupiah } from '../../utils/formatters';
+import { useFinance } from '../../context/FinanceContext';
 
 interface ScanModalProps {
   isOpen: boolean;
@@ -32,22 +33,67 @@ export const ScanModal: React.FC<ScanModalProps> = ({
   onClose,
   onConfirmTransaction,
 }) => {
+  const { addScanHistory } = useFinance();
   const [scanType, setScanType] = useState<'receipt' | 'ewallet'>('receipt');
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [progressMsg, setProgressMsg] = useState('');
   const [progressPercent, setProgressPercent] = useState(0);
   const [scanResult, setScanResult] = useState<OCRResult | null>(null);
+  const recordedRef = useRef(false);
+  const previewUrlRef = useRef<string | null>(null);
+
+  // Reset state setiap modal dibuka / ditutup (bug: preview lama tertinggal)
+  useEffect(() => {
+    if (!isOpen) {
+      if (previewUrlRef.current) {
+        URL.revokeObjectURL(previewUrlRef.current);
+        previewUrlRef.current = null;
+      }
+      setImagePreview(null);
+      setScanResult(null);
+      setIsScanning(false);
+      setProgressPercent(0);
+      setProgressMsg('');
+      recordedRef.current = false;
+    } else {
+      recordedRef.current = false;
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
+
+  const recordHistory = (status: 'saved' | 'discarded') => {
+    if (recordedRef.current || !scanResult) return;
+    recordedRef.current = true;
+    addScanHistory({
+      mode: scanType,
+      amount: scanResult.amount || 0,
+      merchant: scanResult.merchant || (scanType === 'receipt' ? 'Struk Toko' : 'E-Wallet Transfer'),
+      date: scanResult.date || new Date().toISOString().split('T')[0],
+      category: scanResult.category || (scanType === 'receipt' ? 'Belanja & Groceries' : 'Transfer & E-Wallet'),
+      sourceType: scanResult.sourceWalletType,
+      rawText: (scanResult.rawText || '').slice(0, 500),
+      status,
+    });
+  };
+
+  const handleClose = () => {
+    // Scan yang tidak jadi dicatat tetap tercatat di riwayat sebagai "dibuang"
+    recordHistory('discarded');
+    onClose();
+  };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
     const previewUrl = URL.createObjectURL(file);
+    previewUrlRef.current = previewUrl;
     setImagePreview(previewUrl);
     setScanResult(null);
+    recordedRef.current = false;
     setIsScanning(true);
     setProgressMsg('Mengunggah gambar...');
     setProgressPercent(10);
@@ -68,6 +114,7 @@ export const ScanModal: React.FC<ScanModalProps> = ({
 
   const handleApply = () => {
     if (!scanResult) return;
+    recordHistory('saved');
     onConfirmTransaction({
       amount: scanResult.amount || 0,
       merchant: scanResult.merchant || (scanType === 'receipt' ? 'Struk Toko' : 'E-Wallet Transfer'),
@@ -79,6 +126,10 @@ export const ScanModal: React.FC<ScanModalProps> = ({
   };
 
   const handleReset = () => {
+    if (previewUrlRef.current) {
+      URL.revokeObjectURL(previewUrlRef.current);
+      previewUrlRef.current = null;
+    }
     setImagePreview(null);
     setScanResult(null);
     setIsScanning(false);
@@ -87,7 +138,7 @@ export const ScanModal: React.FC<ScanModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-sm transition-all">
-      <div className="w-full max-w-lg bg-white dark:bg-darkcard rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200 dark:border-darkborder overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+      <div className="w-full max-w-lg bg-white dark:bg-darkcard rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200 dark:border-darkborder overflow-hidden modal-in">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-darkborder">
           <div className="flex items-center space-x-2">
@@ -97,7 +148,7 @@ export const ScanModal: React.FC<ScanModalProps> = ({
             </h3>
           </div>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="p-1.5 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
           >
             <X className="w-5 h-5" />

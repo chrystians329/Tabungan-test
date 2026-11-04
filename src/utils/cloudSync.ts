@@ -1,12 +1,15 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { Transaction, Wallet, Goal } from '../types';
+import { Transaction, Wallet, Goal, ScanHistoryItem, IncomeTemplate } from '../types';
 
 let supabaseClient: SupabaseClient | null = null;
 
 export const initSupabase = (url: string, anonKey: string): SupabaseClient | null => {
   if (!url || !anonKey) return null;
+  if (supabaseClient) return supabaseClient;
   try {
-    supabaseClient = createClient(url, anonKey);
+    supabaseClient = createClient(url, anonKey, {
+      realtime: { params: { eventsPerSecond: 5 } },
+    });
     return supabaseClient;
   } catch (err) {
     console.error('Failed to initialize Supabase client:', err);
@@ -20,6 +23,9 @@ export interface SyncPayload {
   transactions: Transaction[];
   wallets: Wallet[];
   goals: Goal[];
+  scanHistory?: ScanHistoryItem[];
+  incomeTemplates?: IncomeTemplate[];
+  updatedAt: string;
 }
 
 /**
@@ -36,7 +42,7 @@ export const syncUpToSupabase = async (
       .upsert({
         user_id: userId,
         data: payload,
-        updated_at: new Date().toISOString(),
+        updated_at: payload.updatedAt || new Date().toISOString(),
       });
     if (error) throw error;
     return true;
@@ -58,13 +64,55 @@ export const syncDownFromSupabase = async (
       .from('user_finances')
       .select('data')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
-    return data?.data as SyncPayload;
+    return (data?.data as SyncPayload) || null;
   } catch (err) {
     console.error('Error syncing down from Supabase:', err);
     return null;
+  }
+};
+
+/**
+ * Subscribe to remote changes (Supabase Realtime).
+ * Callback menerima payload data terbaru dari perangkat lain (HP / Desktop).
+ * Return fungsi untuk berhenti subscribe.
+ */
+export const subscribeToUserFinances = (
+  userId: string,
+  onData: (payload: SyncPayload | null) => void
+): (() => void) => {
+  if (!supabaseClient || !userId) return () => {};
+
+  try {
+    const channel = supabaseClient.channel(`kayaku_${userId}`);
+    channel
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_finances',
+          filter: `user_id=eq.${userId}`,
+        },
+        (payload) => {
+          const record: any = payload.new ?? payload.old;
+          onData((record?.data as SyncPayload) || null);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      try {
+        supabaseClient?.removeChannel(channel);
+      } catch {
+        /* ignore */
+      }
+    };
+  } catch (err) {
+    console.warn('Realtime subscription unavailable, memakai polling:', err);
+    return () => {};
   }
 };
 
@@ -87,4 +135,3 @@ alter table public.user_finances enable row level security;
 create policy "Allow all actions for anon" on public.user_finances for all using (true) with check (true);
 `;
 };
-

@@ -26,15 +26,5 @@
   <body class="bg-slate-50 text-slate-900 dark:bg-darkbg dark:text-slate-100 antialiased selection:bg-brand-500 selection:text-white min-h-screen transition-colors duration-200 overscroll-y-none select-none">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
-    <!-- Service Worker Registration for Mobile PWA -->
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js')
-            .then((reg) => console.log('KayaKu Service Worker Registered!', reg.scope))
-            .catch((err) => console.log('Service Worker Failed:', err));
-        });
-      }
-    </script>
   </body>
 </html>

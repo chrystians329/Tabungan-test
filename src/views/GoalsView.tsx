@@ -268,21 +268,44 @@ export const GoalsView: React.FC<GoalsViewProps> = ({
 
                 {/* Deposit / Withdraw Action Buttons */}
                 <div className="grid grid-cols-2 gap-2 mt-4 pt-2">
-                  <button
-                    onClick={() => onOpenGoalAction(goal, 'deposit')}
-                    className="py-2.5 px-3 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-xs font-semibold shadow-soft hover:shadow-glow transition flex items-center justify-center gap-1.5"
-                  >
-                    <ArrowDownRight className="w-4 h-4" />
-                    <span>Nabung</span>
-                  </button>
+                  {isCompleted ? (
+                    <>
+                      <button
+                        onClick={() => handleDelete(goal)}
+                        className="py-2.5 px-3 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-xs font-semibold shadow-soft transition flex items-center justify-center gap-1.5"
+                        title="Goal sudah 100%, hapus dari daftar"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        <span>Hapus Goals</span>
+                      </button>
 
-                  <button
-                    onClick={() => onOpenGoalAction(goal, 'withdraw')}
-                    className="py-2.5 px-3 rounded-xl border border-slate-200 dark:border-darkborder hover:border-slate-300 dark:hover:border-slate-600 text-slate-700 dark:text-slate-300 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-darkbg transition flex items-center justify-center gap-1.5"
-                  >
-                    <ArrowUpLeft className="w-4 h-4 text-amber-500" />
-                    <span>Tarik</span>
-                  </button>
+                      <button
+                        onClick={() => onOpenGoalAction(goal, 'withdraw')}
+                        className="py-2.5 px-3 rounded-xl border border-slate-200 dark:border-darkborder hover:border-slate-300 dark:hover:border-slate-600 text-slate-700 dark:text-slate-300 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-darkbg transition flex items-center justify-center gap-1.5"
+                      >
+                        <ArrowUpLeft className="w-4 h-4 text-amber-500" />
+                        <span>Tarik</span>
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => onOpenGoalAction(goal, 'deposit')}
+                        className="py-2.5 px-3 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-xs font-semibold shadow-soft hover:shadow-glow transition flex items-center justify-center gap-1.5"
+                      >
+                        <ArrowDownRight className="w-4 h-4" />
+                        <span>Nabung</span>
+                      </button>
+
+                      <button
+                        onClick={() => onOpenGoalAction(goal, 'withdraw')}
+                        className="py-2.5 px-3 rounded-xl border border-slate-200 dark:border-darkborder hover:border-slate-300 dark:hover:border-slate-600 text-slate-700 dark:text-slate-300 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-darkbg transition flex items-center justify-center gap-1.5"
+                      >
+                        <ArrowUpLeft className="w-4 h-4 text-amber-500" />
+                        <span>Tarik</span>
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             );

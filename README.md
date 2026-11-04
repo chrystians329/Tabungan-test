@@ -91,5 +91,28 @@ Aplikasi ini dirancang dengan prinsip **minimalis, elegan, bersih, dan bebas vis
    npm run preview
    ```
 
-# Tabungan-test
-# Tabungan-test
+## 📦 Build APK (Android)
+
+Proyek sudah dikonfigurasi dengan **Capacitor** (`capacitor.config.ts`, `webDir: dist`, app id `com.kayaku.tabungan`) dan folder native `android/`.
+
+**Prasyarat:** Node.js, JDK 17/21, Android SDK (install lewat Android Studio atau commandline-tools).
+
+```bash
+# 1. Build web + sinkronkan ke proyek Android
+npm run build
+npx cap sync android
+
+# 2. Build APK debug (bisa langsung di-install ke HP)
+cd android
+./gradlew assembleDebug
+```
+
+Hasilnya: `android/app/build/outputs/apk/debug/app-debug.apk`
+Salin file `.apk` ke HP → buka → izinkan **Install dari sumber tidak dikenal**.
+
+Build **release** (butuh keystore): `./gradlew assembleRelease` lalu tandatangani dengan `apksigner`.
+
+**Catatan:**
+- Data aplikasi tersimpan lokal di WebView (localStorage) tiap perangkat.
+- Sinkron antar HP & Desktop lewat Supabase: **☰ → Sinkron HP & Desktop → nyalakan “Sinkron otomatis (realtime)”**.
+- Service Worker (PWA) otomatis dimatikan saat berjalan di dalam APK agar versi web tidak tersimpan basi.

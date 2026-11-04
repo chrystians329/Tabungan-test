@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   ScanLine,
   Receipt,
@@ -9,10 +9,13 @@ import {
   ArrowRight,
   X,
   FileCheck,
+  History,
+  Trash2,
 } from 'lucide-react';
 import { scanImageOCR } from '../utils/ocrScanner';
 import { OCRResult } from '../types';
-import { formatRupiah } from '../utils/formatters';
+import { formatRupiah, formatDateIndo } from '../utils/formatters';
+import { useFinance } from '../context/FinanceContext';
 
 interface ScanViewProps {
   onConfirmTransaction: (data: {
@@ -25,20 +28,43 @@ interface ScanViewProps {
 }
 
 export const ScanView: React.FC<ScanViewProps> = ({ onConfirmTransaction }) => {
+  const { scanHistory, addScanHistory, deleteScanHistory, clearScanHistory } = useFinance();
   const [scanType, setScanType] = useState<'receipt' | 'ewallet'>('receipt');
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [progressMsg, setProgressMsg] = useState('');
   const [progressPercent, setProgressPercent] = useState(0);
   const [scanResult, setScanResult] = useState<OCRResult | null>(null);
+  const recordedRef = useRef(false);
+  const previewUrlRef = useRef<string | null>(null);
+
+  const recordHistory = (status: 'saved' | 'discarded') => {
+    if (recordedRef.current || !scanResult) return;
+    recordedRef.current = true;
+    addScanHistory({
+      mode: scanType,
+      amount: scanResult.amount || 0,
+      merchant: scanResult.merchant || (scanType === 'receipt' ? 'Struk Toko' : 'E-Wallet Transfer'),
+      date: scanResult.date || new Date().toISOString().split('T')[0],
+      category:
+        scanResult.category ||
+        (scanType === 'receipt' ? 'Belanja & Groceries' : 'Transfer & E-Wallet'),
+      sourceType: scanResult.sourceWalletType,
+      rawText: (scanResult.rawText || '').slice(0, 500),
+      status,
+    });
+  };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
     const previewUrl = URL.createObjectURL(file);
+    previewUrlRef.current = previewUrl;
     setImagePreview(previewUrl);
     setScanResult(null);
+    recordedRef.current = false;
     setIsScanning(true);
     setProgressMsg('Mengunggah gambar...');
     setProgressPercent(10);
@@ -59,20 +85,29 @@ export const ScanView: React.FC<ScanViewProps> = ({ onConfirmTransaction }) => {
 
   const handleApply = () => {
     if (!scanResult) return;
+    recordHistory('saved');
     onConfirmTransaction({
       amount: scanResult.amount || 0,
       merchant: scanResult.merchant || (scanType === 'receipt' ? 'Struk Toko' : 'E-Wallet Transfer'),
       date: scanResult.date || new Date().toISOString().split('T')[0],
-      category: scanResult.category || (scanType === 'receipt' ? 'Belanja & Groceries' : 'Transfer & E-Wallet'),
+      category:
+        scanResult.category ||
+        (scanType === 'receipt' ? 'Belanja & Groceries' : 'Transfer & E-Wallet'),
       sourceType: scanResult.sourceWalletType,
     });
   };
 
   const handleReset = () => {
+    recordHistory('discarded');
+    if (previewUrlRef.current) {
+      URL.revokeObjectURL(previewUrlRef.current);
+      previewUrlRef.current = null;
+    }
     setImagePreview(null);
     setScanResult(null);
     setIsScanning(false);
     setProgressPercent(0);
+    recordedRef.current = false;
   };
 
   return (
@@ -229,6 +264,101 @@ export const ScanView: React.FC<ScanViewProps> = ({ onConfirmTransaction }) => {
                 </button>
               </div>
             )}
+          </div>
+        )}
+      </div>
+
+      {/* Riwayat Scan Struk / Screenshot */}
+      <div className="rounded-3xl bg-white dark:bg-darkcard border border-slate-200 dark:border-darkborder shadow-soft overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-darkborder">
+          <div>
+            <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <History className="w-4 h-4 text-brand-500" />
+              Riwayat Scan
+            </h2>
+            <p className="text-[11px] text-slate-400 mt-0.5">
+              {scanHistory.length} hasil scan tercatat (tersimpan otomatis)
+            </p>
+          </div>
+          {scanHistory.length > 0 && (
+            <button
+              onClick={() => {
+                if (confirm('Hapus seluruh riwayat scan?')) clearScanHistory();
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold text-rose-500 hover:bg-rose-500/10 transition"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Bersihkan</span>
+            </button>
+          )}
+        </div>
+
+        {scanHistory.length === 0 ? (
+          <div className="p-10 text-center empty-pop">
+            <Receipt className="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto mb-3 float-slow" />
+            <p className="text-xs text-slate-400">
+              Belum ada riwayat scan. Hasil scan struk atau screenshot akan tercatat di sini.
+            </p>
+          </div>
+        ) : (
+          <div className="divide-y divide-slate-100 dark:divide-darkborder max-h-96 overflow-y-auto">
+            {scanHistory.map((item, index) => (
+              <div
+                key={item.id}
+                className="p-4 flex items-center justify-between gap-3 hover:bg-slate-50/60 dark:hover:bg-darkbg/40 transition fade-up"
+                style={{ animationDelay: `${Math.min(index, 10) * 35}ms` }}
+              >
+                <div className="flex items-center space-x-3 min-w-0">
+                  <div
+                    className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                      item.mode === 'receipt'
+                        ? 'bg-brand-500/10 text-brand-600 dark:text-brand-400'
+                        : 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
+                    }`}
+                  >
+                    {item.mode === 'receipt' ? (
+                      <Receipt className="w-5 h-5" />
+                    ) : (
+                      <Smartphone className="w-5 h-5" />
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <span className="text-sm font-bold text-slate-900 dark:text-white block truncate">
+                      {item.merchant || 'Tanpa Nama'}
+                    </span>
+                    <div className="flex items-center gap-2 text-[11px] text-slate-400">
+                      <span>{formatDateIndo(item.date)}</span>
+                      <span>•</span>
+                      <span className="truncate max-w-[140px]">{item.category}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-3 shrink-0">
+                  <div className="text-right">
+                    <span className="text-sm font-extrabold text-slate-900 dark:text-white block">
+                      {item.amount > 0 ? formatRupiah(item.amount) : '-'}
+                    </span>
+                    <span
+                      className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                        item.status === 'saved'
+                          ? 'bg-brand-500/15 text-brand-600 dark:text-brand-400'
+                          : 'bg-slate-200 dark:bg-darkborder text-slate-500 dark:text-slate-400'
+                      }`}
+                    >
+                      {item.status === 'saved' ? 'Tercatat' : 'Dibuang'}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => deleteScanHistory(item.id)}
+                    className="p-2 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition"
+                    title="Hapus riwayat"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>

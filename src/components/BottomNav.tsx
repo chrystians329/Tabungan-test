@@ -52,7 +52,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
         <div className="flex-1 flex justify-center -mt-6">
           <button
             onClick={onOpenQuickAction}
-            className="w-13 h-13 w-12 h-12 rounded-full bg-gradient-to-tr from-brand-600 to-brand-400 text-white shadow-glow flex items-center justify-center hover:scale-105 active:scale-95 transition"
+            className="w-12 h-12 rounded-full bg-gradient-to-tr from-brand-600 to-brand-400 text-white shadow-glow flex items-center justify-center hover:scale-105 active:scale-95 transition"
             aria-label="Aksi Cepat"
           >
             <Plus className="w-6 h-6 stroke-[2.5]" />

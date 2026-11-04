@@ -84,21 +84,21 @@ export const GoalModal: React.FC<GoalModalProps> = ({
 
     if (editingGoal) {
       updateGoal(editingGoal.id, {
-        name,
+        name: name.trim(),
         targetAmount,
         priority,
         deadline: deadline || undefined,
         imageUrl,
-        notes,
+        notes: notes.trim(),
       });
     } else {
       addGoal({
-        name,
+        name: name.trim(),
         targetAmount,
         priority,
         deadline: deadline || undefined,
         imageUrl,
-        notes,
+        notes: notes.trim(),
       });
     }
     onClose();

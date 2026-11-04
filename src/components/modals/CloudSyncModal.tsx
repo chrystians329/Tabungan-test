@@ -23,10 +23,14 @@ export const CloudSyncModal: React.FC<CloudSyncModalProps> = ({
   isOpen,
   onClose,
 }) => {
-  const { settings, updateSettings, syncWithCloud } = useFinance();
+  const { settings, updateSettings, syncWithCloud, lastRemoteSyncAt } = useFinance();
   const [supabaseUrl, setSupabaseUrl] = useState(settings.supabaseUrl || '');
   const [supabaseAnonKey, setSupabaseAnonKey] = useState(settings.supabaseAnonKey || '');
   const [userId, setUserId] = useState(settings.userName || 'user_tabungan_1');
+  const [autoSync, setAutoSync] = useState(settings.syncEnabled);
+  const [intervalSec, setIntervalSec] = useState(
+    Math.round((settings.syncIntervalMs || 4000) / 1000)
+  );
   const [isSyncing, setIsSyncing] = useState(false);
   const [copiedSql, setCopiedSql] = useState(false);
 
@@ -39,13 +43,16 @@ export const CloudSyncModal: React.FC<CloudSyncModalProps> = ({
       supabaseUrl,
       supabaseAnonKey,
       userName: userId,
-      syncEnabled: Boolean(supabaseUrl && supabaseAnonKey),
+      syncEnabled: autoSync && Boolean(supabaseUrl && supabaseAnonKey),
+      syncIntervalMs: Math.max(2, Number(intervalSec) || 4) * 1000,
     });
 
     try {
       const ok = await syncWithCloud();
       if (ok) {
-        alert('Sinkronisasi cloud berhasil! Data Anda sekarang terhubung di semua perangkat.');
+        alert(
+          'Terhubung! Data akan tersinkron otomatis (realtime) antara HP dan Desktop selama ID akun yang dipakai sama.'
+        );
         onClose();
       } else {
         alert('Gagal menyinkronkan. Mohon periksa kembali Project URL dan Anon Key Supabase Anda.');
@@ -89,13 +96,30 @@ export const CloudSyncModal: React.FC<CloudSyncModalProps> = ({
             <ArrowRightLeft className="w-5 h-5 text-brand-500 animate-pulse" />
             <div className="flex flex-col items-center">
               <Cloud className="w-6 h-6 text-brand-600 dark:text-brand-400 mb-1" />
-              <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">Gratis Cloud</span>
+              <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">Cloud Realtime</span>
             </div>
             <ArrowRightLeft className="w-5 h-5 text-brand-500 animate-pulse" />
             <div className="flex flex-col items-center">
               <Smartphone className="w-6 h-6 text-brand-600 dark:text-brand-400 mb-1" />
-              <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">Mobile PWA</span>
+              <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">Aplikasi HP</span>
             </div>
+          </div>
+
+          {/* Status koneksi terakhir */}
+          <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-darkbg border border-slate-200 dark:border-darkborder text-xs">
+            <span className="text-slate-500 dark:text-slate-400">Status sinkronisasi</span>
+            <span className="font-bold text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
+              <span
+                className={`w-2 h-2 rounded-full ${
+                  settings.syncEnabled ? 'bg-brand-500 animate-pulse' : 'bg-slate-300 dark:bg-slate-600'
+                }`}
+              />
+              {settings.syncEnabled
+                ? lastRemoteSyncAt
+                  ? 'Realtime aktif'
+                  : 'Auto-sync aktif'
+                : 'Belum aktif'}
+            </span>
           </div>
 
           {/* Option Comparison Guide */}
@@ -198,6 +222,40 @@ export const CloudSyncModal: React.FC<CloudSyncModalProps> = ({
                 {copiedSql ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                 <span>{copiedSql ? 'Tersalin!' : 'Salin SQL'}</span>
               </button>
+            </div>
+
+            {/* Opsi sinkronisasi otomatis */}
+            <div className="p-3.5 rounded-xl border border-slate-200 dark:border-darkborder bg-slate-50/50 dark:bg-darkbg/40 space-y-3">
+              <label className="flex items-start justify-between gap-3 cursor-pointer">
+                <span className="text-xs text-slate-700 dark:text-slate-300">
+                  <strong className="block text-slate-900 dark:text-white">
+                    Sinkron otomatis (realtime)
+                  </strong>
+                  Perubahan di HP langsung muncul di Desktop dan sebaliknya.
+                </span>
+                <input
+                  type="checkbox"
+                  checked={autoSync}
+                  onChange={(e) => setAutoSync(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 accent-brand-500"
+                />
+              </label>
+
+              <label className="flex items-center justify-between gap-3">
+                <span className="text-xs text-slate-700 dark:text-slate-300">
+                  Interval pengecekan
+                </span>
+                <select
+                  value={intervalSec}
+                  onChange={(e) => setIntervalSec(Number(e.target.value))}
+                  className="px-2.5 py-1.5 rounded-lg bg-white dark:bg-darkcard border border-slate-200 dark:border-darkborder text-xs font-semibold text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                >
+                  <option value={2}>2 detik (cepat)</option>
+                  <option value={4}>4 detik (standar)</option>
+                  <option value={10}>10 detik (hemat)</option>
+                  <option value={30}>30 detik</option>
+                </select>
+              </label>
             </div>
 
             <button
