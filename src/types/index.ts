@@ -5,8 +5,6 @@ export interface Wallet {
   name: string;
   type: WalletType;
   balance: number;
-  icon?: string;
-  color?: string;
   accountNumber?: string;
   createdAt: string;
 }
@@ -22,22 +20,11 @@ export interface Transaction {
   category: string;
   date: string; // YYYY-MM-DD
   note: string;
-  receiptImageUrl?: string;
   merchant?: string;
   createdAt: string;
 }
 
 export type GoalPriority = 'urgent' | 'biasa' | 'santai';
-
-export interface GoalContribution {
-  id: string;
-  goalId: string;
-  amount: number;
-  date: string;
-  note?: string;
-  type: 'deposit' | 'withdraw';
-  createdAt: string;
-}
 
 export interface Goal {
   id: string;
@@ -65,17 +52,15 @@ export interface WealthBreakdown {
 }
 
 export interface AppSettings {
-  theme: 'light' | 'dark' | 'system';
-  currency: string;
   userName: string;
   // Free Cloud Sync config (e.g. Supabase free tier or Google Drive)
   supabaseUrl?: string;
   supabaseAnonKey?: string;
   syncEnabled: boolean;
-  lastSyncedAt?: string;
   // Interval auto sinkron (ms). Default 4 detik.
   syncIntervalMs?: number;
   incomeTemplates?: IncomeTemplate[];
+  expenseTemplates?: ExpenseTemplate[];
 }
 
 export interface OCRResult {
@@ -89,6 +74,17 @@ export interface OCRResult {
 }
 
 export interface IncomeTemplate {
+  id: string;
+  name: string;
+  amount: number;
+  category: string;
+  merchant?: string;
+  note?: string;
+  walletId?: string;
+  createdAt: string;
+}
+
+export interface ExpenseTemplate {
   id: string;
   name: string;
   amount: number;

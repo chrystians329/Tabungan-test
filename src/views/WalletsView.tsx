@@ -8,11 +8,10 @@ import {
   Edit2,
   Trash2,
   ArrowLeftRight,
-  TrendingUp,
 } from 'lucide-react';
 import { useFinance } from '../context/FinanceContext';
-import { Wallet, WalletType } from '../types';
-import { formatRupiah, formatCompactRupiah } from '../utils/formatters';
+import { Wallet } from '../types';
+import { formatRupiah } from '../utils/formatters';
 
 interface WalletsViewProps {
   onOpenNewWallet: () => void;

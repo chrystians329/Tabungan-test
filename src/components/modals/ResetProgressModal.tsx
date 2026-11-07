@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { X, RotateCcw, AlertTriangle, CheckCircle2, Loader2 } from 'lucide-react';
 import { useFinance } from '../../context/FinanceContext';
-import { formatRupiah } from '../../utils/formatters';
 import { useModalTransition } from '../../hooks/useModalTransition';
 
 interface ResetProgressModalProps {
@@ -10,7 +9,7 @@ interface ResetProgressModalProps {
 }
 
 export const ResetProgressModal: React.FC<ResetProgressModalProps> = ({ isOpen, onClose }) => {
-  const { breakdown, transactions, scanHistory, goals, resetTotalProgress } = useFinance();
+  const { resetTotalProgress } = useFinance();
   const [confirmText, setConfirmText] = useState('');
   const [isResetting, setIsResetting] = useState(false);
   const [done, setDone] = useState(false);
@@ -84,38 +83,6 @@ export const ResetProgressModal: React.FC<ResetProgressModalProps> = ({ isOpen, 
                 dihapus / disetel ke <strong>Rp 0</strong>.
               </div>
             </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-darkbg border border-slate-200 dark:border-darkborder">
-                <span className="text-[11px] text-slate-400 block">Total Kekayaan Saat Ini</span>
-                <span className="text-sm font-extrabold text-slate-900 dark:text-white">
-                  {formatRupiah(breakdown.grandTotal)}
-                </span>
-              </div>
-              <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-darkbg border border-slate-200 dark:border-darkborder">
-                <span className="text-[11px] text-slate-400 block">Akan Disetel Ke</span>
-                <span className="text-sm font-extrabold text-rose-500">Rp 0</span>
-              </div>
-            </div>
-
-            <ul className="space-y-1.5 text-xs text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-darkbg rounded-2xl p-4 border border-slate-200 dark:border-darkborder">
-              <li className="flex items-center justify-between">
-                <span>Record transaksi dihapus</span>
-                <strong>{transactions.length} data</strong>
-              </li>
-              <li className="flex items-center justify-between">
-                <span>Riwayat scan struk dihapus</span>
-                <strong>{scanHistory.length} data</strong>
-              </li>
-              <li className="flex items-center justify-between">
-                <span>Saldo dompet direset</span>
-                <strong>Rp 0</strong>
-              </li>
-              <li className="flex items-center justify-between">
-                <span>Tabungan goals direset</span>
-                <strong>{goals.length} goals = Rp 0</strong>
-              </li>
-            </ul>
 
             <div>
               <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">

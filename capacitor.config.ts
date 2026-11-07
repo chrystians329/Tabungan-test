@@ -7,11 +7,17 @@ const config: CapacitorConfig = {
   backgroundColor: '#0B0F17',
   android: {
     allowMixedContent: false,
-    captureInput: true,
     webContentsDebuggingEnabled: false,
   },
   server: {
     androidScheme: 'https',
+  },
+  plugins: {
+    SystemBars: {
+      // viewport-fit=cover sudah ada di index.html; beri tahu sejak awal agar
+      // safe-area inset (status bar) langsung ditangani benar sejak frame pertama.
+      initialViewportFitValueHint: 'cover',
+    },
   },
 };
 

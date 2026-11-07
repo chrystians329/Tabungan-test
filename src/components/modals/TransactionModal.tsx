@@ -12,6 +12,7 @@ import {
 import { useFinance } from '../../context/FinanceContext';
 import { Transaction, TransactionType } from '../../types';
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '../../constants/categories';
+import { getLocalDateString } from '../../utils/formatters';
 import { useModalTransition } from '../../hooks/useModalTransition';
 
 interface TransactionModalProps {
@@ -38,7 +39,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
   const [toWalletId, setToWalletId] = useState('');
   const [category, setCategory] = useState('');
   const [merchant, setMerchant] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState(getLocalDateString());
   const [note, setNote] = useState('');
 
   // Editing hanya bila benar-benar punya id (hasil scan/template = transaksi baru)
@@ -75,7 +76,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
         (nextType === 'income' ? INCOME_CATEGORIES[0] : EXPENSE_CATEGORIES[0])
     );
     setMerchant(source?.merchant || '');
-    setDate(source?.date || new Date().toISOString().split('T')[0]);
+    setDate(source?.date || getLocalDateString());
     setNote(source?.note || '');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editingTransaction, prefillTransaction, initialType, isOpen]);
@@ -90,7 +91,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
       alert('Masukkan nominal uang yang valid.');
       return;
     }
-    if (!walletId) {
+    if (!walletId || !wallets.some((w) => w.id === walletId)) {
       alert('Pilih dompet / rekening.');
       return;
     }
@@ -132,9 +133,13 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
   };
 
   const incomeTemplates = settings.incomeTemplates || [];
+  const expenseTemplates = settings.expenseTemplates || [];
 
-  const applyTemplate = (tpl: (typeof incomeTemplates)[number]) => {
-    setType('income');
+  const applyTemplate = (
+    tpl: (typeof incomeTemplates)[number] | (typeof expenseTemplates)[number],
+    tplType: 'income' | 'expense'
+  ) => {
+    setType(tplType);
     setAmountStr(tpl.amount ? new Intl.NumberFormat('id-ID').format(tpl.amount) : '');
     setCategory(tpl.category);
     setMerchant(tpl.merchant || '');
@@ -234,8 +239,35 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
                   <button
                     key={tpl.id}
                     type="button"
-                    onClick={() => applyTemplate(tpl)}
+                    onClick={() => applyTemplate(tpl, 'income')}
                     className="px-3 py-1.5 rounded-xl border border-brand-500/30 bg-brand-500/10 text-brand-700 dark:text-brand-300 text-[11px] font-bold hover:bg-brand-500 hover:text-white transition"
+                    title={`Isi otomatis: ${tpl.name}`}
+                  >
+                    {tpl.name}
+                    <span className="opacity-70 font-semibold">
+                      {' '}
+                      · {new Intl.NumberFormat('id-ID').format(tpl.amount)}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Template Pengeluaran (cepat, bisa diatur di hamburger menu) */}
+          {type === 'expense' && expenseTemplates.length > 0 && (
+            <div>
+              <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5">
+                <LayoutTemplate className="w-3.5 h-3.5 text-rose-500" />
+                Template Pengeluaran
+              </label>
+              <div className="flex flex-wrap gap-1.5">
+                {expenseTemplates.map((tpl) => (
+                  <button
+                    key={tpl.id}
+                    type="button"
+                    onClick={() => applyTemplate(tpl, 'expense')}
+                    className="px-3 py-1.5 rounded-xl border border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-300 text-[11px] font-bold hover:bg-rose-500 hover:text-white transition"
                     title={`Isi otomatis: ${tpl.name}`}
                   >
                     {tpl.name}
@@ -405,4 +437,3 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
     </div>
   );
 };
-

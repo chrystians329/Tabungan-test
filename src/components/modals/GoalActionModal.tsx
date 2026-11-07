@@ -21,7 +21,6 @@ export const GoalActionModal: React.FC<GoalActionModalProps> = ({
 }) => {
   const { depositToGoal, withdrawFromGoal } = useFinance();
   const [amountStr, setAmountStr] = useState('');
-  const [note, setNote] = useState('');
 
   // Tetap mounted selama animasi close supaya tidak langsung hilang
   const [mounted, isClosing] = useModalTransition(isOpen);
@@ -43,7 +42,7 @@ export const GoalActionModal: React.FC<GoalActionModalProps> = ({
     }
 
     if (mode === 'deposit') {
-      depositToGoal(goal.id, amount, note);
+      depositToGoal(goal.id, amount);
       // Check if target is achieved to fire confetti!
       if (goal.currentAmount + amount >= goal.targetAmount) {
         confetti({
@@ -54,11 +53,10 @@ export const GoalActionModal: React.FC<GoalActionModalProps> = ({
         });
       }
     } else {
-      withdrawFromGoal(goal.id, amount, note);
+      withdrawFromGoal(goal.id, amount);
     }
 
     setAmountStr('');
-    setNote('');
     onClose();
   };
 
@@ -154,19 +152,6 @@ export const GoalActionModal: React.FC<GoalActionModalProps> = ({
                 +{new Intl.NumberFormat('id-ID').format(quick)}
               </button>
             ))}
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">
-              Catatan (Opsional)
-            </label>
-            <input
-              type="text"
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              placeholder="cth: Sisihan uang jajan minggu ini"
-              className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-darkbg rounded-xl border border-slate-200 dark:border-darkborder text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 transition"
-            />
           </div>
 
           <div className="pt-2">

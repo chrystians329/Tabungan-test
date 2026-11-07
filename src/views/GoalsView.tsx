@@ -4,11 +4,9 @@ import {
   Plus,
   Edit2,
   Trash2,
-  Sparkles,
   ArrowDownRight,
   ArrowUpLeft,
   Calendar,
-  AlertCircle,
   CheckCircle,
 } from 'lucide-react';
 import { useFinance } from '../context/FinanceContext';
@@ -52,11 +50,8 @@ export const GoalsView: React.FC<GoalsViewProps> = ({
         <div>
           <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
             <Target className="w-6 h-6 text-brand-500" />
-            Target Tabungan (Goals Terpisah)
+            Target Tabungan
           </h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Tabungan khusus untuk impian & masa depan Anda tanpa mengganggu uang operasional utama
-          </p>
         </div>
 
         <button
@@ -66,14 +61,6 @@ export const GoalsView: React.FC<GoalsViewProps> = ({
           <Plus className="w-4 h-4" />
           <span>+ Buat Target Goal Baru</span>
         </button>
-      </div>
-
-      {/* Isolation Notice Banner */}
-      <div className="p-4 rounded-2xl bg-brand-500/10 border border-brand-500/20 flex items-start space-x-3">
-        <AlertCircle className="w-5 h-5 text-brand-600 dark:text-brand-400 mt-0.5 shrink-0" />
-        <div className="text-xs text-brand-800 dark:text-brand-200">
-          <strong>Sistem Tabungan Mandiri (Terisolasi):</strong> Uang di dalam target goals ini dihitung secara terpisah dari saldo dompet utama. Jika Anda menambah pengeluaran di dompet utama, saldo tabungan goals tidak akan berkurang, dan begitu pula sebaliknya.
-        </div>
       </div>
 
       {/* Aggregate Stats */}
@@ -118,10 +105,10 @@ export const GoalsView: React.FC<GoalsViewProps> = ({
           className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition whitespace-nowrap ${
             filterPriority === 'urgent'
               ? 'bg-rose-500 text-white shadow-soft'
-              : 'bg-white dark:bg-darkcard border border-slate-200 dark:border-darkborder text-slate-600 dark:text-slate-300'
+              : 'bg-rose-500/10 border border-rose-500/30 text-rose-700 dark:text-rose-300'
           }`}
         >
-          🚨 Sangat Mendesak
+          Sangat Mendesak
         </button>
 
         <button
@@ -129,10 +116,10 @@ export const GoalsView: React.FC<GoalsViewProps> = ({
           className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition whitespace-nowrap ${
             filterPriority === 'biasa'
               ? 'bg-amber-500 text-white shadow-soft'
-              : 'bg-white dark:bg-darkcard border border-slate-200 dark:border-darkborder text-slate-600 dark:text-slate-300'
+              : 'bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-300'
           }`}
         >
-          ⚡ Biasa Saja
+          Biasa Saja
         </button>
 
         <button
@@ -140,10 +127,10 @@ export const GoalsView: React.FC<GoalsViewProps> = ({
           className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition whitespace-nowrap ${
             filterPriority === 'santai'
               ? 'bg-emerald-600 text-white shadow-soft'
-              : 'bg-white dark:bg-darkcard border border-slate-200 dark:border-darkborder text-slate-600 dark:text-slate-300'
+              : 'bg-brand-500/10 border border-brand-500/30 text-brand-700 dark:text-brand-300'
           }`}
         >
-          ☕ Tidak Penting Amat
+          Tidak Penting Amat
         </button>
       </div>
 
@@ -315,4 +302,3 @@ export const GoalsView: React.FC<GoalsViewProps> = ({
     </div>
   );
 };
-

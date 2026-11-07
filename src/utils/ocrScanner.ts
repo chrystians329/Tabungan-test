@@ -1,5 +1,6 @@
 import { createWorker } from 'tesseract.js';
 import { OCRResult, WalletType } from '../types';
+import { getLocalDateString } from './formatters';
 
 export interface ScanProgressCallback {
   (progress: { status: string; progress: number }): void;
@@ -55,7 +56,7 @@ export const parseReceipt = (text: string): OCRResult => {
   const lines = text.split('\n').map((l) => l.trim()).filter(Boolean);
   let merchant = '';
   let amount = 0;
-  let date = new Date().toISOString().split('T')[0];
+  let date = getLocalDateString();
   let category = 'Belanja & Groceries';
 
   // 1. Merchant Detection
@@ -198,7 +199,7 @@ export const parseEWalletScreenshot = (text: string): OCRResult => {
   let sourceWalletType: WalletType = 'ewallet';
   let merchant = '';
   let amount = 0;
-  let date = new Date().toISOString().split('T')[0];
+  let date = getLocalDateString();
   let category = 'Transfer & E-Wallet';
 
   // 1. Detect Source Wallet / App
@@ -300,4 +301,3 @@ const cleanNominalString = (raw: string): number => {
   const num = parseInt(str, 10);
   return isNaN(num) ? 0 : num;
 };
-

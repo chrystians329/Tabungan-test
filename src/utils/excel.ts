@@ -1,5 +1,6 @@
 import * as XLSX from 'xlsx';
 import { Transaction, Wallet, Goal, WealthBreakdown } from '../types';
+import { getLocalDateString } from './formatters';
 
 export interface ExportDataPayload {
   transactions: Transaction[];
@@ -177,7 +178,7 @@ export const exportToExcel = ({
   XLSX.utils.book_append_sheet(wb, wsGoals, 'Target Goals');
 
   // Generate filename with date
-  const dateStr = new Date().toISOString().split('T')[0];
+  const dateStr = getLocalDateString();
   XLSX.writeFile(wb, `KayaKu_Laporan_Keuangan_${dateStr}.xlsx`);
 };
 
@@ -191,7 +192,7 @@ export const exportToJSON = (data: {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `KayaKu_Backup_${new Date().toISOString().split('T')[0]}.json`;
+  a.download = `KayaKu_Backup_${getLocalDateString()}.json`;
   a.click();
   URL.revokeObjectURL(url);
 };
@@ -293,7 +294,7 @@ export const parseExcelOrJSONFile = async (
             : '';
         return {
           id: `import_tx_${Date.now()}_${i}`,
-          date: excelDateToISO(r['Tanggal']) || new Date().toISOString().split('T')[0],
+          date: excelDateToISO(r['Tanggal']) || getLocalDateString(),
           type:
             r['Tipe'] === 'Pemasukan'
               ? ('income' as const)
@@ -356,5 +357,4 @@ export const parseExcelOrJSONFile = async (
 
   return result;
 };
-
 

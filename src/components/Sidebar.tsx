@@ -56,7 +56,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
   return (
     <aside className="hidden lg:flex flex-col w-64 border-r border-slate-200 dark:border-darkborder bg-white dark:bg-darkcard h-[calc(100vh-4rem)] sticky top-16 transition-colors">
       {/* Navigation Links */}
-      <div className="flex-1 py-6 px-4 space-y-1.5 overflow-y-auto">
+      <div className="flex-1 py-6 px-4 space-y-0.5 overflow-y-auto">
         <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2">
           Menu Utama
         </p>
@@ -68,7 +68,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
-              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition ${
+              className={`w-full flex items-center justify-between px-3.5 py-2 rounded-xl text-sm font-medium transition ${
                 isActive
                   ? 'bg-brand-500/10 text-brand-600 dark:text-brand-400 font-semibold'
                   : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-darkbg/70'

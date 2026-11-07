@@ -23,6 +23,7 @@ Aplikasi ini dirancang dengan prinsip **minimalis, elegan, bersih, dan bebas vis
 
 ### 2. Full CRUD (Create, Read, Update, Delete)
 - Tambah, edit, dan hapus transaksi dengan pembaruan saldo dompet secara *real-time*.
+- Gunakan template pemasukan dan pengeluaran untuk mengisi transaksi lebih cepat.
 - Kelola dompet/rekening (tambah rekening baru, ubah nomor akun/saldo, hapus akun).
 - Riwayat transaksi dilengkapi pencarian teks, filter kategori, filter dompet, dan tanggal.
 
@@ -46,6 +47,7 @@ Aplikasi ini dirancang dengan prinsip **minimalis, elegan, bersih, dan bebas vis
 ### 5. Dashboard Portofolio & Kalkulasi Persentase Uang
 - Total Kekayaan Bersih (*Grand Total Net Worth*) menghitung keseluruhan:
   $$\text{Grand Total} = \text{Cash} + \text{E-Wallet} + \text{Bank} + \text{Goals}$$
+- Diagram pemasukan dan pengeluaran per bulan untuk enam bulan terakhir.
 - Visual **Multi-Segment Distribution Bar** dan kartu persentase:
   - Uang Cash: Rp X (Y%)
   - E-Wallet: Rp X (Y%)
@@ -69,7 +71,7 @@ Aplikasi ini dirancang dengan prinsip **minimalis, elegan, bersih, dan bebas vis
 - Otomatis mendeteksi sumber e-wallet/bank dan mengisi form pencatatan.
 
 ### 9. Light & Dark Mode
-- Beralih instan antara mode Gelap (Obsidian) dan Terang (Pure White).
+- Beralih instan melalui tombol mode Gelap (Obsidian) dan Terang (Pure White).
 - Preferensi tersimpan otomatis di perangkat pengguna.
 
 ---

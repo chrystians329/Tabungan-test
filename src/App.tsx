@@ -50,6 +50,7 @@ const AppContent: React.FC = () => {
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
   const [isExportImportOpen, setIsExportImportOpen] = useState(false);
   const [isTemplateSettingsOpen, setIsTemplateSettingsOpen] = useState(false);
+  const [templateSettingsTab, setTemplateSettingsTab] = useState<'income' | 'expense'>('income');
   const [isResetProgressOpen, setIsResetProgressOpen] = useState(false);
   const [isMenuDrawerOpen, setIsMenuDrawerOpen] = useState(false);
 
@@ -300,11 +301,12 @@ const AppContent: React.FC = () => {
             <button
               onClick={() => {
                 setIsMobileQuickMenuOpen(false);
+                setTemplateSettingsTab('income');
                 setIsTemplateSettingsOpen(true);
               }}
               className="w-full py-3 px-4 rounded-2xl bg-slate-900 text-white dark:bg-brand-500 dark:text-white flex items-center justify-between text-xs font-bold shadow-soft transition"
             >
-              <span>Atur Template Pemasukan</span>
+              <span>Atur Template Transaksi</span>
               <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-full">Pengaturan</span>
             </button>
           </div>
@@ -358,6 +360,7 @@ const AppContent: React.FC = () => {
       <TemplateSettingsModal
         isOpen={isTemplateSettingsOpen}
         onClose={() => setIsTemplateSettingsOpen(false)}
+        initialTab={templateSettingsTab}
       />
 
       <ResetProgressModal
@@ -368,8 +371,10 @@ const AppContent: React.FC = () => {
       <MenuDrawer
         isOpen={isMenuDrawerOpen}
         onClose={() => setIsMenuDrawerOpen(false)}
-        setActiveTab={setActiveTab}
-        onOpenTemplateSettings={() => setIsTemplateSettingsOpen(true)}
+        onOpenTemplateSettings={(tab) => {
+          setTemplateSettingsTab(tab);
+          setIsTemplateSettingsOpen(true);
+        }}
         onOpenResetProgress={() => setIsResetProgressOpen(true)}
         onOpenSyncModal={() => setIsSyncModalOpen(true)}
         onOpenExportImport={() => setIsExportImportOpen(true)}

@@ -212,10 +212,10 @@ export const GoalModal: React.FC<GoalModalProps> = ({
                 className={`py-2 px-3 rounded-xl border text-xs font-semibold transition ${
                   priority === 'urgent'
                     ? 'border-rose-500 bg-rose-500/15 text-rose-600 dark:text-rose-400 shadow-sm'
-                    : 'border-slate-200 dark:border-darkborder text-slate-600 dark:text-slate-400'
+                    : 'border-rose-500/30 bg-rose-500/5 text-rose-700 dark:text-rose-300'
                 }`}
               >
-                🚨 Sangat Mendesak
+                Sangat Mendesak
               </button>
 
               <button
@@ -224,10 +224,10 @@ export const GoalModal: React.FC<GoalModalProps> = ({
                 className={`py-2 px-3 rounded-xl border text-xs font-semibold transition ${
                   priority === 'biasa'
                     ? 'border-amber-500 bg-amber-500/15 text-amber-600 dark:text-amber-400 shadow-sm'
-                    : 'border-slate-200 dark:border-darkborder text-slate-600 dark:text-slate-400'
+                    : 'border-amber-500/30 bg-amber-500/5 text-amber-700 dark:text-amber-300'
                 }`}
               >
-                ⚡ Biasa Saja
+                Biasa Saja
               </button>
 
               <button
@@ -236,10 +236,10 @@ export const GoalModal: React.FC<GoalModalProps> = ({
                 className={`py-2 px-3 rounded-xl border text-xs font-semibold transition ${
                   priority === 'santai'
                     ? 'border-brand-500 bg-brand-500/15 text-brand-600 dark:text-brand-400 shadow-sm'
-                    : 'border-slate-200 dark:border-darkborder text-slate-600 dark:text-slate-400'
+                    : 'border-brand-500/30 bg-brand-500/5 text-brand-700 dark:text-brand-300'
                 }`}
               >
-                ☕ Tidak Penting Amat
+                Tidak Penting Amat
               </button>
             </div>
           </div>
@@ -329,4 +329,3 @@ export const GoalModal: React.FC<GoalModalProps> = ({
     </div>
   );
 };
-

@@ -6,12 +6,12 @@ import {
   Upload,
   FileJson,
   CheckCircle2,
-  AlertCircle,
-  Database,
 } from 'lucide-react';
 import { useFinance } from '../../context/FinanceContext';
 import { exportToExcel, exportToJSON, parseExcelOrJSONFile } from '../../utils/excel';
 import { useModalTransition } from '../../hooks/useModalTransition';
+
+type ImportPreview = Awaited<ReturnType<typeof parseExcelOrJSONFile>>;
 
 interface ExportImportModalProps {
   isOpen: boolean;
@@ -22,10 +22,10 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
   isOpen,
   onClose,
 }) => {
-  const { transactions, wallets, goals, breakdown, importAllData, resetAllData, resetTotalProgress } =
+  const { transactions, wallets, goals, breakdown, importAllData, resetTotalProgress } =
     useFinance();
   const [importStatus, setImportStatus] = useState<string | null>(null);
-  const [importPreview, setImportPreview] = useState<any | null>(null);
+  const [importPreview, setImportPreview] = useState<ImportPreview | null>(null);
 
   // Tetap mounted selama animasi close supaya tidak langsung hilang
   const [mounted, isClosing] = useModalTransition(isOpen);
@@ -224,25 +224,6 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
               className="w-full py-2.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-semibold text-xs shadow-sm transition"
             >
               Kosongkan Semua Saldo (Jadikan Rp 0)
-            </button>
-          </div>
-
-          {/* Reset Demo Data */}
-          <div className="flex items-center justify-between pt-1">
-            <span className="text-xs text-slate-500 dark:text-slate-400">
-              Atau isi kembali dengan sampel simulasi?
-            </span>
-            <button
-              onClick={() => {
-                if (confirm('Kembalikan semua data ke sampel awal?')) {
-                  resetAllData();
-                  alert('Data telah diisi dengan sampel simulasi.');
-                  onClose();
-                }
-              }}
-              className="text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 font-semibold underline"
-            >
-              Muat Sampel Contoh
             </button>
           </div>
         </div>

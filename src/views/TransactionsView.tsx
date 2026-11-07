@@ -2,7 +2,6 @@ import React, { useState, useMemo } from 'react';
 import {
   Receipt,
   Search,
-  Filter,
   Plus,
   ArrowUpRight,
   ArrowDownLeft,
@@ -10,7 +9,6 @@ import {
   Edit2,
   Trash2,
   FileSpreadsheet,
-  Calendar,
 } from 'lucide-react';
 import { useFinance } from '../context/FinanceContext';
 import { Transaction, TransactionType } from '../types';

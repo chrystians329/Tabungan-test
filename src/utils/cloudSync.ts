@@ -1,5 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { Transaction, Wallet, Goal, ScanHistoryItem, IncomeTemplate } from '../types';
+import { Transaction, Wallet, Goal, ScanHistoryItem, IncomeTemplate, ExpenseTemplate } from '../types';
 
 let supabaseClient: SupabaseClient | null = null;
 
@@ -17,14 +17,13 @@ export const initSupabase = (url: string, anonKey: string): SupabaseClient | nul
   }
 };
 
-export const getSupabaseClient = (): SupabaseClient | null => supabaseClient;
-
 export interface SyncPayload {
   transactions: Transaction[];
   wallets: Wallet[];
   goals: Goal[];
   scanHistory?: ScanHistoryItem[];
   incomeTemplates?: IncomeTemplate[];
+  expenseTemplates?: ExpenseTemplate[];
   updatedAt: string;
 }
 

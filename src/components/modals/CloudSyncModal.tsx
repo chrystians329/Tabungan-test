@@ -8,8 +8,6 @@ import {
   Laptop,
   ArrowRightLeft,
   Sparkles,
-  HelpCircle,
-  ExternalLink,
 } from 'lucide-react';
 import { useFinance } from '../../context/FinanceContext';
 import { getSupabaseSqlSchema } from '../../utils/cloudSync';

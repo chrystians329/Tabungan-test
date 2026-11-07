@@ -21,7 +21,6 @@ export const WalletModal: React.FC<WalletModalProps> = ({
   const [type, setType] = useState<WalletType>('bank');
   const [balanceStr, setBalanceStr] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
-  const [color, setColor] = useState('#10B981');
 
   // Tetap mounted selama animasi close supaya tidak langsung hilang
   const [mounted, isClosing] = useModalTransition(isOpen);
@@ -36,13 +35,11 @@ export const WalletModal: React.FC<WalletModalProps> = ({
       setType(editingWallet.type);
       setBalanceStr(new Intl.NumberFormat('id-ID').format(editingWallet.balance));
       setAccountNumber(editingWallet.accountNumber || '');
-      setColor(editingWallet.color || '#10B981');
     } else {
       setName('');
       setType('bank');
       setBalanceStr('');
       setAccountNumber('');
-      setColor('#10B981');
     }
   }, [editingWallet, isOpen]);
 
@@ -64,7 +61,6 @@ export const WalletModal: React.FC<WalletModalProps> = ({
         type,
         balance,
         accountNumber,
-        color,
       });
     } else {
       addWallet({
@@ -72,7 +68,6 @@ export const WalletModal: React.FC<WalletModalProps> = ({
         type,
         balance,
         accountNumber,
-        color,
       });
     }
     onClose();

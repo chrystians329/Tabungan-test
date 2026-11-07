@@ -15,6 +15,7 @@ import {
   AppSettings,
   ScanHistoryItem,
   IncomeTemplate,
+  ExpenseTemplate,
 } from '../types';
 import {
   initSupabase,
@@ -23,6 +24,7 @@ import {
   subscribeToUserFinances,
   SyncPayload,
 } from '../utils/cloudSync';
+import { getLocalDateString } from '../utils/formatters';
 
 interface FinanceContextType {
   wallets: Wallet[];
@@ -49,8 +51,8 @@ interface FinanceContextType {
   addGoal: (goal: Omit<Goal, 'id' | 'currentAmount' | 'createdAt'>) => void;
   updateGoal: (id: string, goal: Partial<Goal>) => void;
   deleteGoal: (id: string) => void;
-  depositToGoal: (goalId: string, amount: number, note?: string) => void;
-  withdrawFromGoal: (goalId: string, amount: number, note?: string) => void;
+  depositToGoal: (goalId: string, amount: number) => void;
+  withdrawFromGoal: (goalId: string, amount: number) => void;
 
   // Scan History (Riwayat Scan Struk / E-Wallet)
   addScanHistory: (item: Omit<ScanHistoryItem, 'id' | 'createdAt'>) => void;
@@ -61,6 +63,11 @@ interface FinanceContextType {
   addIncomeTemplate: (tpl: Omit<IncomeTemplate, 'id' | 'createdAt'>) => void;
   updateIncomeTemplate: (id: string, tpl: Partial<IncomeTemplate>) => void;
   deleteIncomeTemplate: (id: string) => void;
+
+  // Expense Templates (Template Pengeluaran)
+  addExpenseTemplate: (tpl: Omit<ExpenseTemplate, 'id' | 'createdAt'>) => void;
+  updateExpenseTemplate: (id: string, tpl: Partial<ExpenseTemplate>) => void;
+  deleteExpenseTemplate: (id: string) => void;
 
   // Settings & Cloud Sync
   updateSettings: (newSettings: Partial<AppSettings>) => void;
@@ -74,8 +81,6 @@ interface FinanceContextType {
     goals?: Goal[];
     scanHistory?: ScanHistoryItem[];
   }) => void;
-  resetAllData: () => void;
-  resetToZero: () => void;
   resetTotalProgress: () => void;
 }
 
@@ -88,8 +93,6 @@ const DEFAULT_WALLETS: Wallet[] = [
     name: 'Dompet Tunai',
     type: 'cash',
     balance: 0,
-    icon: 'Wallet',
-    color: '#10B981',
     createdAt: new Date().toISOString(),
   },
   {
@@ -97,8 +100,6 @@ const DEFAULT_WALLETS: Wallet[] = [
     name: 'GoPay',
     type: 'ewallet',
     balance: 0,
-    icon: 'Smartphone',
-    color: '#00AED6',
     accountNumber: '0812-xxxx-xxxx',
     createdAt: new Date().toISOString(),
   },
@@ -107,8 +108,6 @@ const DEFAULT_WALLETS: Wallet[] = [
     name: 'BCA Tahapan',
     type: 'bank',
     balance: 0,
-    icon: 'Landmark',
-    color: '#005E9E',
     accountNumber: '8210-xxx-xxx',
     createdAt: new Date().toISOString(),
   },
@@ -172,6 +171,36 @@ const DEFAULT_TEMPLATES: IncomeTemplate[] = [
   },
 ];
 
+const DEFAULT_EXPENSE_TEMPLATES: ExpenseTemplate[] = [
+  {
+    id: 'tpl_exp_makan_siang',
+    name: 'Makan Siang',
+    amount: 25000,
+    category: 'Makanan & Minuman',
+    merchant: '',
+    note: '',
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 'tpl_exp_bensin',
+    name: 'Bensin / Transport',
+    amount: 50000,
+    category: 'Transportasi',
+    merchant: '',
+    note: '',
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: 'tpl_exp_kopi',
+    name: 'Kopi / Jajan',
+    amount: 20000,
+    category: 'Makanan & Minuman',
+    merchant: '',
+    note: '',
+    createdAt: new Date().toISOString(),
+  },
+];
+
 // Initial Transactions (Empty clean list)
 const DEFAULT_TRANSACTIONS: Transaction[] = [];
 const DEFAULT_SCAN_HISTORY: ScanHistoryItem[] = [];
@@ -207,8 +236,6 @@ function safeParse<T>(key: string, fallback: T): T {
     return fallback;
   }
 }
-
-const cloneList = <T,>(list: T[]): T[] => list.map((item) => ({ ...item }));
 
 export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Theme state
@@ -252,8 +279,6 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [settings, setSettings] = useState<AppSettings>(() => {
     const saved = safeParse<Partial<AppSettings> | null>('kayaku_settings', null);
     return {
-      theme: 'light',
-      currency: 'IDR',
       userName: 'Pengguna Pintar',
       syncEnabled: false,
       syncIntervalMs: 4000,
@@ -262,6 +287,10 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         saved?.incomeTemplates && Array.isArray(saved.incomeTemplates)
           ? saved.incomeTemplates
           : DEFAULT_TEMPLATES,
+      expenseTemplates:
+        saved?.expenseTemplates && Array.isArray(saved.expenseTemplates)
+          ? saved.expenseTemplates
+          : DEFAULT_EXPENSE_TEMPLATES,
     };
   });
 
@@ -290,7 +319,13 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   // Real-time Cross-tab Sync via BroadcastChannel
   const broadcastChange = useCallback(
-    (newWallets: Wallet[], newTxs: Transaction[], newGoals: Goal[], newScans: ScanHistoryItem[]) => {
+    (
+      newWallets: Wallet[],
+      newTxs: Transaction[],
+      newGoals: Goal[],
+      newScans: ScanHistoryItem[],
+      newSettings?: AppSettings
+    ) => {
       if (typeof BroadcastChannel !== 'undefined') {
         const channel = new BroadcastChannel(BROADCAST_CHANNEL_NAME);
         channel.postMessage({
@@ -300,6 +335,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
             transactions: newTxs,
             goals: newGoals,
             scanHistory: newScans,
+            settings: newSettings,
           },
         });
         channel.close();
@@ -314,11 +350,18 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
       channel = new BroadcastChannel(BROADCAST_CHANNEL_NAME);
       channel.onmessage = (event) => {
         if (event.data?.type === 'SYNC_STATE') {
-          const { wallets: w, transactions: t, goals: g, scanHistory: s } = event.data.payload;
+          const {
+            wallets: w,
+            transactions: t,
+            goals: g,
+            scanHistory: s,
+            settings: st,
+          } = event.data.payload;
           if (w) setWallets(w);
           if (t) setTransactions(t);
           if (g) setGoals(g);
           if (s) setScanHistory(s);
+          if (st) setSettings((prev) => ({ ...prev, ...st }));
         }
       };
     }
@@ -546,7 +589,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     broadcastChange(wallets, transactions, updated, scanHistory);
   };
 
-  const depositToGoal = (goalId: string, amount: number, _note?: string) => {
+  const depositToGoal = (goalId: string, amount: number) => {
     const updated = goals.map((g) =>
       g.id === goalId ? { ...g, currentAmount: g.currentAmount + amount } : g
     );
@@ -554,7 +597,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     broadcastChange(wallets, transactions, updated, scanHistory);
   };
 
-  const withdrawFromGoal = (goalId: string, amount: number, _note?: string) => {
+  const withdrawFromGoal = (goalId: string, amount: number) => {
     const updated = goals.map((g) =>
       g.id === goalId
         ? { ...g, currentAmount: Math.max(0, g.currentAmount - amount) }
@@ -571,24 +614,27 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
       id: `scan_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
       createdAt: new Date().toISOString(),
     };
-    setScanHistory((prev) => {
-      const updated = [newItem, ...prev].slice(0, 200);
-      broadcastChange(wallets, transactions, goals, updated);
-      return updated;
-    });
+    const updated = [newItem, ...scanHistory].slice(0, 200);
+    setScanHistory(updated);
+    broadcastChange(wallets, transactions, goals, updated);
   };
 
   const deleteScanHistory = (id: string) => {
-    setScanHistory((prev) => {
-      const updated = prev.filter((s) => s.id !== id);
-      broadcastChange(wallets, transactions, goals, updated);
-      return updated;
-    });
+    const updated = scanHistory.filter((s) => s.id !== id);
+    setScanHistory(updated);
+    broadcastChange(wallets, transactions, goals, updated);
   };
 
   const clearScanHistory = () => {
     setScanHistory([]);
     broadcastChange(wallets, transactions, goals, []);
+  };
+
+  // ================= Templates & Settings =================
+  /** Simpan settings baru + broadcast ke tab lain agar template ikut sinkron. */
+  const applySettings = (next: AppSettings) => {
+    setSettings(next);
+    broadcastChange(wallets, transactions, goals, scanHistory, next);
   };
 
   // ================= Income Templates =================
@@ -598,31 +644,59 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
       id: `tpl_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
       createdAt: new Date().toISOString(),
     };
-    setSettings((prev) => ({
-      ...prev,
-      incomeTemplates: [...(prev.incomeTemplates || []), newTpl],
-    }));
+    applySettings({
+      ...settings,
+      incomeTemplates: [...(settings.incomeTemplates || []), newTpl],
+    });
   };
 
   const updateIncomeTemplate = (id: string, tpl: Partial<IncomeTemplate>) => {
-    setSettings((prev) => ({
-      ...prev,
-      incomeTemplates: (prev.incomeTemplates || []).map((t) =>
+    applySettings({
+      ...settings,
+      incomeTemplates: (settings.incomeTemplates || []).map((t) =>
         t.id === id ? { ...t, ...tpl } : t
       ),
-    }));
+    });
   };
 
   const deleteIncomeTemplate = (id: string) => {
-    setSettings((prev) => ({
-      ...prev,
-      incomeTemplates: (prev.incomeTemplates || []).filter((t) => t.id !== id),
-    }));
+    applySettings({
+      ...settings,
+      incomeTemplates: (settings.incomeTemplates || []).filter((t) => t.id !== id),
+    });
   };
 
-  // ================= Cloud Sync & Settings =================
+  // ================= Expense Templates =================
+  const addExpenseTemplate = (tpl: Omit<ExpenseTemplate, 'id' | 'createdAt'>) => {
+    const newTpl: ExpenseTemplate = {
+      ...tpl,
+      id: `tplexp_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      createdAt: new Date().toISOString(),
+    };
+    applySettings({
+      ...settings,
+      expenseTemplates: [...(settings.expenseTemplates || []), newTpl],
+    });
+  };
+
+  const updateExpenseTemplate = (id: string, tpl: Partial<ExpenseTemplate>) => {
+    applySettings({
+      ...settings,
+      expenseTemplates: (settings.expenseTemplates || []).map((t) =>
+        t.id === id ? { ...t, ...tpl } : t
+      ),
+    });
+  };
+
+  const deleteExpenseTemplate = (id: string) => {
+    applySettings({
+      ...settings,
+      expenseTemplates: (settings.expenseTemplates || []).filter((t) => t.id !== id),
+    });
+  };
+
   const updateSettings = (newSettings: Partial<AppSettings>) => {
-    setSettings((prev) => ({ ...prev, ...newSettings }));
+    applySettings({ ...settings, ...newSettings });
   };
 
   const syncUserId = settings.userName?.trim() || 'default_user';
@@ -634,9 +708,10 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
       goals,
       scanHistory,
       incomeTemplates: settings.incomeTemplates || [],
+      expenseTemplates: settings.expenseTemplates || [],
       updatedAt: new Date().toISOString(),
     }),
-    [wallets, transactions, goals, scanHistory, settings.incomeTemplates]
+    [wallets, transactions, goals, scanHistory, settings.incomeTemplates, settings.expenseTemplates]
   );
 
   // Refs untuk mengatur lalu lintas sinkronisasi (mencegah loop & echo)
@@ -660,6 +735,9 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (Array.isArray(payload.incomeTemplates)) {
       setSettings((prev) => ({ ...prev, incomeTemplates: payload.incomeTemplates }));
     }
+    if (Array.isArray(payload.expenseTemplates)) {
+      setSettings((prev) => ({ ...prev, expenseTemplates: payload.expenseTemplates }));
+    }
   }, []);
 
   const syncWithCloud = async (): Promise<boolean> => {
@@ -675,7 +753,6 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
       lastRemoteUpdatedAtRef.current = payload.updatedAt;
       const remote = await syncDownFromSupabase(syncUserId);
       if (remote) applyRemotePayload(remote);
-      updateSettings({ lastSyncedAt: new Date().toISOString() });
     }
     return success;
   };
@@ -713,6 +790,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     goals,
     scanHistory,
     settings.incomeTemplates,
+    settings.expenseTemplates,
     buildPayload,
   ]);
 
@@ -800,7 +878,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         id: incoming.id || `tx_import_${Date.now()}_${index}`,
         walletId,
         toWalletId: toWalletId && toWalletId !== walletId ? toWalletId : undefined,
-        date: incoming.date || new Date().toISOString().split('T')[0],
+        date: incoming.date || getLocalDateString(),
         note: incoming.note || '',
         category: incoming.category || 'Lain-lain',
       };
@@ -860,24 +938,6 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     broadcastChange(nextWallets, nextTxs, nextGoals, nextScans);
   };
 
-  const resetAllData = () => {
-    setWallets(DEFAULT_WALLETS);
-    setTransactions(DEFAULT_TRANSACTIONS);
-    setGoals(DEFAULT_GOALS);
-    setScanHistory(DEFAULT_SCAN_HISTORY);
-    broadcastChange(DEFAULT_WALLETS, DEFAULT_TRANSACTIONS, DEFAULT_GOALS, DEFAULT_SCAN_HISTORY);
-  };
-
-  const resetToZero = () => {
-    const zeroWallets = wallets.map((w) => ({ ...w, balance: 0 }));
-    const zeroGoals = goals.map((g) => ({ ...g, currentAmount: 0 }));
-    setWallets(zeroWallets);
-    setTransactions([]);
-    setGoals(zeroGoals);
-    setScanHistory([]);
-    broadcastChange(zeroWallets, [], zeroGoals, []);
-  };
-
   /**
    * Reset Total Progress: menghapus semua record transaksi, riwayat scan,
    * dan menyetel seluruh saldo dompet + tabungan goals kembali ke 0.
@@ -898,6 +958,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         goals: zeroGoals,
         scanHistory: [],
         incomeTemplates: settings.incomeTemplates || [],
+        expenseTemplates: settings.expenseTemplates || [],
         updatedAt: new Date().toISOString(),
       };
       syncUpToSupabase(syncUserId, payload).then((ok) => {
@@ -935,12 +996,13 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         addIncomeTemplate,
         updateIncomeTemplate,
         deleteIncomeTemplate,
+        addExpenseTemplate,
+        updateExpenseTemplate,
+        deleteExpenseTemplate,
         updateSettings,
         syncWithCloud,
         lastRemoteSyncAt,
         importAllData,
-        resetAllData,
-        resetToZero,
         resetTotalProgress,
       }}
     >
@@ -956,5 +1018,3 @@ export const useFinance = () => {
   }
   return context;
 };
-
-export { cloneList };

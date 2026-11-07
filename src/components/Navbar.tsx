@@ -1,5 +1,5 @@
 import React from 'react';
-import { Cloud, FileSpreadsheet, Menu } from 'lucide-react';
+import { Cloud, FileSpreadsheet, Menu, Moon, Sun } from 'lucide-react';
 import { useFinance } from '../context/FinanceContext';
 import { formatRupiah } from '../utils/formatters';
 
@@ -14,7 +14,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenSyncModal,
   onOpenExportImport,
 }) => {
-  const { breakdown, settings } = useFinance();
+  const { breakdown, settings, theme, toggleTheme } = useFinance();
 
   return (
     <header className="sticky top-0 z-30 pt-safe bg-white dark:bg-darkcard border-b border-slate-200/80 dark:border-darkborder transition-colors">
@@ -31,38 +31,40 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           <div className="flex items-center space-x-2.5 min-w-0">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-brand-400 p-0.5 shadow-soft flex items-center justify-center shrink-0">
-              <div className="w-full h-full bg-slate-900 rounded-[10px] flex items-center justify-center">
-                <img src="/logo.svg" alt="KayaKu Logo" className="w-6 h-6 object-contain" />
+              <div className={`w-full h-full rounded-[10px] flex items-center justify-center ${
+                theme === 'dark' ? 'bg-slate-900' : 'bg-white'
+              }`}>
+                <img
+                  src={theme === 'dark' ? '/logo-dark.svg' : '/logo-light.svg'}
+                  alt="KayaKu Logo"
+                  className="w-6 h-6 object-contain"
+                />
               </div>
             </div>
-            <div className="min-w-0">
-              <div className="flex items-center space-x-2">
-                <span className="font-bold text-lg tracking-tight text-slate-900 dark:text-white">
-                  Kaya<span className="text-brand-500">Ku</span>
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 hidden sm:block truncate">
-                Tabungan & Target Impian
-              </p>
-            </div>
+            <span className="hidden xs:inline font-bold text-lg tracking-tight text-slate-900 dark:text-white">
+              Kaya<span className="text-brand-500">Ku</span>
+            </span>
           </div>
         </div>
 
-        {/* Total Kekayaan Badge (Desktop) */}
-        <div className="hidden md:flex items-center space-x-3 bg-slate-100 dark:bg-darkbg px-3.5 py-1.5 rounded-full border border-slate-200 dark:border-darkborder">
-          <span className="text-xs text-slate-500 dark:text-slate-400">Total Kekayaan:</span>
-          <span className="text-xs font-bold text-brand-600 dark:text-brand-400">
+        {/* Total uang (angka saja) */}
+        <div className="flex items-center space-x-2 bg-slate-100 dark:bg-darkbg px-3 py-1.5 rounded-full border border-slate-200 dark:border-darkborder">
+          <span className="text-xs font-bold text-brand-600 dark:text-brand-400 whitespace-nowrap">
             {formatRupiah(breakdown.grandTotal)}
           </span>
         </div>
 
-        {/* Action Controls (theme pindah ke hamburger menu) */}
-        <div className="flex items-center space-x-2">
-          <div className="md:hidden flex items-center space-x-2 bg-slate-100 dark:bg-darkbg px-2.5 py-1.5 rounded-full border border-slate-200 dark:border-darkborder">
-            <span className="text-[10px] font-bold text-brand-600 dark:text-brand-400">
-              {formatRupiah(breakdown.grandTotal)}
-            </span>
-          </div>
+        {/* Action Controls */}
+        <div className="flex items-center space-x-1 sm:space-x-2">
+          <button
+            onClick={toggleTheme}
+            aria-label={theme === 'light' ? 'Mode gelap' : 'Mode terang'}
+            aria-pressed={theme === 'dark'}
+            className="w-10 h-10 flex items-center justify-center rounded-xl border border-slate-200 dark:border-darkborder bg-slate-100 dark:bg-darkbg text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-darkborder/50 transition"
+            title={theme === 'light' ? 'Mode gelap' : 'Mode terang'}
+          >
+            {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+          </button>
 
           <button
             onClick={onOpenExportImport}

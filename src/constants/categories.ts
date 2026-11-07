@@ -20,5 +20,3 @@ export const INCOME_CATEGORIES = [
   'Penjualan',
   'Lain-lain',
 ];
-
-export const getAllCategories = () => Array.from(new Set([...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES]));

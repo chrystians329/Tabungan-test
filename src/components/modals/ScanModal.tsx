@@ -6,15 +6,13 @@ import {
   Smartphone,
   UploadCloud,
   Camera,
-  CheckCircle2,
-  AlertCircle,
   Sparkles,
   ArrowRight,
   Loader2,
 } from 'lucide-react';
 import { scanImageOCR } from '../../utils/ocrScanner';
 import { OCRResult } from '../../types';
-import { formatRupiah } from '../../utils/formatters';
+import { formatRupiah, getLocalDateString } from '../../utils/formatters';
 import { useFinance } from '../../context/FinanceContext';
 import { useModalTransition } from '../../hooks/useModalTransition';
 
@@ -74,7 +72,7 @@ export const ScanModal: React.FC<ScanModalProps> = ({
       mode: scanType,
       amount: scanResult.amount || 0,
       merchant: scanResult.merchant || (scanType === 'receipt' ? 'Struk Toko' : 'E-Wallet Transfer'),
-      date: scanResult.date || new Date().toISOString().split('T')[0],
+      date: scanResult.date || getLocalDateString(),
       category: scanResult.category || (scanType === 'receipt' ? 'Belanja & Groceries' : 'Transfer & E-Wallet'),
       sourceType: scanResult.sourceWalletType,
       rawText: (scanResult.rawText || '').slice(0, 500),
@@ -122,7 +120,7 @@ export const ScanModal: React.FC<ScanModalProps> = ({
     onConfirmTransaction({
       amount: scanResult.amount || 0,
       merchant: scanResult.merchant || (scanType === 'receipt' ? 'Struk Toko' : 'E-Wallet Transfer'),
-      date: scanResult.date || new Date().toISOString().split('T')[0],
+      date: scanResult.date || getLocalDateString(),
       category: scanResult.category || (scanType === 'receipt' ? 'Belanja & Groceries' : 'Transfer & E-Wallet'),
       sourceType: scanResult.sourceWalletType,
     });
@@ -368,4 +366,3 @@ export const ScanModal: React.FC<ScanModalProps> = ({
     </div>
   );
 };
-

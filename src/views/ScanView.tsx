@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { scanImageOCR } from '../utils/ocrScanner';
 import { OCRResult } from '../types';
-import { formatRupiah, formatDateIndo } from '../utils/formatters';
+import { formatRupiah, formatDateIndo, getLocalDateString } from '../utils/formatters';
 import { useFinance } from '../context/FinanceContext';
 
 interface ScanViewProps {
@@ -46,7 +46,7 @@ export const ScanView: React.FC<ScanViewProps> = ({ onConfirmTransaction }) => {
       mode: scanType,
       amount: scanResult.amount || 0,
       merchant: scanResult.merchant || (scanType === 'receipt' ? 'Struk Toko' : 'E-Wallet Transfer'),
-      date: scanResult.date || new Date().toISOString().split('T')[0],
+      date: scanResult.date || getLocalDateString(),
       category:
         scanResult.category ||
         (scanType === 'receipt' ? 'Belanja & Groceries' : 'Transfer & E-Wallet'),
@@ -90,12 +90,14 @@ export const ScanView: React.FC<ScanViewProps> = ({ onConfirmTransaction }) => {
     onConfirmTransaction({
       amount: scanResult.amount || 0,
       merchant: scanResult.merchant || (scanType === 'receipt' ? 'Struk Toko' : 'E-Wallet Transfer'),
-      date: scanResult.date || new Date().toISOString().split('T')[0],
+      date: scanResult.date || getLocalDateString(),
       category:
         scanResult.category ||
         (scanType === 'receipt' ? 'Belanja & Groceries' : 'Transfer & E-Wallet'),
       sourceType: scanResult.sourceWalletType,
     });
+    // Bersihkan hasil scan supaya tidak bisa ditransfer dua kali
+    handleReset();
   };
 
   const handleReset = () => {
@@ -397,4 +399,3 @@ export const ScanView: React.FC<ScanViewProps> = ({ onConfirmTransaction }) => {
     </div>
   );
 };
-
