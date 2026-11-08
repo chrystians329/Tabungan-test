@@ -130,7 +130,7 @@ export const WalletsView: React.FC<WalletsViewProps> = ({
             Dompet, E-Wallet & Rekening Bank
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Kelola semua kantong penyimpanan uang Anda (CRUD)
+            Kelola semua kantong penyimpanan uang Anda
           </p>
         </div>
 
@@ -148,7 +148,7 @@ export const WalletsView: React.FC<WalletsViewProps> = ({
             className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-xs font-semibold shadow-soft hover:shadow-glow transition"
           >
             <Plus className="w-4 h-4" />
-            <span>+ Tambah Akun / Dompet</span>
+            <span>Tambah Akun / Dompet</span>
           </button>
         </div>
       </div>

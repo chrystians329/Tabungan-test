@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Target, Image as ImageIcon, AlertCircle } from 'lucide-react';
+import { X, Target, Image as ImageIcon, AlertCircle, Trash2, Plus } from 'lucide-react';
 import { useFinance } from '../../context/FinanceContext';
 import { Goal, GoalPriority } from '../../types';
 import { useModalTransition } from '../../hooks/useModalTransition';
@@ -10,30 +10,23 @@ interface GoalModalProps {
   editingGoal?: Goal | null;
 }
 
-const PRESET_IMAGES = [
+interface GoalPresetImage {
+  id: string;
+  name: string;
+  url: string;
+}
+
+// Hanya 2 foto dummy awal sesuai permintaan
+const DEFAULT_PRESET_IMAGES: GoalPresetImage[] = [
   {
+    id: 'default_1',
     name: 'Dana Darurat',
     url: 'https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?auto=format&fit=crop&w=400&q=80',
   },
   {
+    id: 'default_2',
     name: 'Gadget & Laptop',
     url: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=400&q=80',
-  },
-  {
-    name: 'Liburan & Healing',
-    url: 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=400&q=80',
-  },
-  {
-    name: 'Kendaraan / Motor',
-    url: 'https://images.unsplash.com/photo-1558981403-c5f9899a28bc?auto=format&fit=crop&w=400&q=80',
-  },
-  {
-    name: 'Rumah & Properti',
-    url: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=400&q=80',
-  },
-  {
-    name: 'Emas / Investasi',
-    url: 'https://images.unsplash.com/photo-1610375461246-83df859d849d?auto=format&fit=crop&w=400&q=80',
   },
 ];
 
@@ -44,19 +37,30 @@ export const GoalModal: React.FC<GoalModalProps> = ({
 }) => {
   const { addGoal, updateGoal } = useFinance();
 
+  const [targetImages, setTargetImages] = useState<GoalPresetImage[]>(() => {
+    try {
+      const saved = localStorage.getItem('kayaku_goal_preset_images');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return DEFAULT_PRESET_IMAGES;
+  });
+
   const [name, setName] = useState('');
   const [targetAmountStr, setTargetAmountStr] = useState('');
   const [priority, setPriority] = useState<GoalPriority>('biasa');
   const [deadline, setDeadline] = useState('');
-  const [imageUrl, setImageUrl] = useState(PRESET_IMAGES[0].url);
+  const [imageUrl, setImageUrl] = useState(() => targetImages[0]?.url || DEFAULT_PRESET_IMAGES[0].url);
+  const [urlInput, setUrlInput] = useState('');
   const [notes, setNotes] = useState('');
 
   // Tetap mounted selama animasi close supaya tidak langsung hilang
   const [mounted, isClosing] = useModalTransition(isOpen);
 
   useEffect(() => {
-    // Hanya isi ulang form saat modal dibuka (saat menutup form sengaja dibiarkan
-    // supaya isinya tidak mendadak kosong selama animasi close)
+    // Hanya isi ulang form saat modal dibuka
     if (!isOpen) return;
 
     if (editingGoal) {
@@ -64,19 +68,61 @@ export const GoalModal: React.FC<GoalModalProps> = ({
       setTargetAmountStr(new Intl.NumberFormat('id-ID').format(editingGoal.targetAmount));
       setPriority(editingGoal.priority);
       setDeadline(editingGoal.deadline || '');
-      setImageUrl(editingGoal.imageUrl || PRESET_IMAGES[0].url);
+      setImageUrl(editingGoal.imageUrl || targetImages[0]?.url || DEFAULT_PRESET_IMAGES[0].url);
       setNotes(editingGoal.notes || '');
     } else {
       setName('');
       setTargetAmountStr('');
       setPriority('biasa');
       setDeadline('');
-      setImageUrl(PRESET_IMAGES[0].url);
+      setImageUrl(targetImages[0]?.url || DEFAULT_PRESET_IMAGES[0].url);
       setNotes('');
     }
-  }, [editingGoal, isOpen]);
+    setUrlInput('');
+  }, [editingGoal, isOpen, targetImages]);
 
   if (!mounted) return null;
+
+  const addImageToPresets = (url: string, imgName = 'Foto Target') => {
+    if (!url || !url.trim()) return;
+    const cleanUrl = url.trim();
+    setTargetImages((prev) => {
+      const exists = prev.find((item) => item.url === cleanUrl);
+      if (exists) return prev;
+      const updated = [
+        ...prev,
+        {
+          id: `img_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+          name: imgName,
+          url: cleanUrl,
+        },
+      ];
+      try {
+        localStorage.setItem('kayaku_goal_preset_images', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+    setImageUrl(cleanUrl);
+  };
+
+  const handleDeletePresetImage = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    setTargetImages((prev) => {
+      if (prev.length <= 1) {
+        alert('Sisakan minimal 1 foto target.');
+        return prev;
+      }
+      const itemToDelete = prev.find((item) => item.id === id);
+      const remaining = prev.filter((item) => item.id !== id);
+      try {
+        localStorage.setItem('kayaku_goal_preset_images', JSON.stringify(remaining));
+      } catch {}
+      if (itemToDelete && imageUrl === itemToDelete.url) {
+        setImageUrl(remaining[0].url);
+      }
+      return remaining;
+    });
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -123,19 +169,24 @@ export const GoalModal: React.FC<GoalModalProps> = ({
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImageUrl(reader.result as string);
+        const dataUrl = reader.result as string;
+        const displayName = file.name.replace(/\.[^/.]+$/, '').slice(0, 16) || 'Foto Saya';
+        addImageToPresets(dataUrl, displayName);
       };
       reader.readAsDataURL(file);
+      e.target.value = '';
     }
   };
 
   return (
     <div
+      onClick={onClose}
       className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 ${
         isClosing ? 'fade-out pointer-events-none' : 'animate-fade-in'
       }`}
     >
       <div
+        onClick={(e) => e.stopPropagation()}
         className={`w-full max-w-lg bg-white dark:bg-darkcard rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200 dark:border-darkborder overflow-hidden ${
           isClosing ? 'modal-out pointer-events-none' : 'modal-in'
         }`}
@@ -259,31 +310,48 @@ export const GoalModal: React.FC<GoalModalProps> = ({
 
           {/* Image Selection (Preset & Custom Upload) */}
           <div>
-            <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5">
-              Gambar Target
-            </label>
-            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-3">
-              {PRESET_IMAGES.map((preset) => (
-                <button
-                  key={preset.name}
-                  type="button"
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400">
+                Gambar Target ({targetImages.length} Tersedia)
+              </label>
+              <span className="text-[10px] text-slate-400">Klik untuk pakai, tong sampah untuk hapus</span>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
+              {targetImages.map((preset) => (
+                <div
+                  key={preset.id}
                   onClick={() => setImageUrl(preset.url)}
-                  className={`relative rounded-xl overflow-hidden aspect-video border-2 transition ${
+                  className={`group relative rounded-xl overflow-hidden aspect-video border-2 cursor-pointer transition ${
                     imageUrl === preset.url
-                      ? 'border-brand-500 scale-105 shadow-md'
-                      : 'border-transparent opacity-70 hover:opacity-100'
+                      ? 'border-brand-500 scale-[1.02] shadow-md ring-2 ring-brand-500/20'
+                      : 'border-transparent opacity-70 hover:opacity-100 hover:scale-[1.01]'
                   }`}
                   title={preset.name}
                 >
                   <img src={preset.url} alt={preset.name} className="w-full h-full object-cover" />
-                </button>
+
+                  {/* Delete button from Gambar Target */}
+                  <button
+                    type="button"
+                    onClick={(e) => handleDeletePresetImage(e, preset.id)}
+                    className="absolute top-1 right-1 w-5 h-5 rounded-md bg-slate-900/80 hover:bg-rose-600 text-white flex items-center justify-center transition shadow"
+                    title={`Hapus foto "${preset.name}"`}
+                    aria-label={`Hapus foto "${preset.name}"`}
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+
+                  <span className="absolute bottom-0 inset-x-0 bg-slate-900/70 text-white text-[9px] px-1 py-0.5 truncate text-center pointer-events-none">
+                    {preset.name}
+                  </span>
+                </div>
               ))}
             </div>
 
             <div className="flex items-center space-x-2">
-              <label className="cursor-pointer flex items-center space-x-2 px-3 py-2 rounded-xl border border-dashed border-slate-300 dark:border-darkborder hover:border-brand-500 text-xs text-slate-600 dark:text-slate-300 transition">
+              <label className="cursor-pointer flex items-center space-x-1.5 px-3 py-2 rounded-xl border border-dashed border-slate-300 dark:border-darkborder hover:border-brand-500 text-xs text-slate-600 dark:text-slate-300 transition shrink-0">
                 <ImageIcon className="w-4 h-4 text-brand-500" />
-                <span>Upload Foto Sendiri</span>
+                <span>Upload Foto</span>
                 <input
                   type="file"
                   accept="image/*"
@@ -292,13 +360,36 @@ export const GoalModal: React.FC<GoalModalProps> = ({
                 />
               </label>
 
-              <input
-                type="url"
-                value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
-                placeholder="Atau tempel URL gambar..."
-                className="flex-1 px-3 py-2 bg-slate-50 dark:bg-darkbg rounded-xl border border-slate-200 dark:border-darkborder text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 transition"
-              />
+              <div className="flex-1 flex items-center space-x-1.5">
+                <input
+                  type="url"
+                  value={urlInput}
+                  onChange={(e) => setUrlInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      if (urlInput.trim()) {
+                        addImageToPresets(urlInput.trim(), 'Link Gambar');
+                        setUrlInput('');
+                      }
+                    }
+                  }}
+                  placeholder="Atau tempel link URL foto..."
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-darkbg rounded-xl border border-slate-200 dark:border-darkborder text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 transition"
+                />
+                {urlInput.trim() && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      addImageToPresets(urlInput.trim(), 'Link Gambar');
+                      setUrlInput('');
+                    }}
+                    className="px-3 py-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-xs font-semibold shrink-0 transition"
+                  >
+                    Simpan
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 

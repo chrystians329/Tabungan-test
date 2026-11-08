@@ -30,7 +30,7 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
   onOpenExportImport,
   onOpenScanModal,
 }) => {
-  const { settings, theme } = useFinance();
+  const { settings } = useFinance();
 
   // Tetap mounted selama animasi close supaya drawer tidak langsung hilang
   const [mounted, isClosing] = useModalTransition(isOpen, 220);
@@ -62,11 +62,9 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
         <div className="flex items-center justify-between px-4 py-4 pt-safe border-b border-slate-200 dark:border-darkborder">
           <div className="flex items-center space-x-2.5">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-600 to-brand-400 p-0.5 shadow-soft flex items-center justify-center">
-              <div className={`w-full h-full rounded-[9px] flex items-center justify-center ${
-                theme === 'dark' ? 'bg-slate-900' : 'bg-white'
-              }`}>
+              <div className="w-full h-full bg-slate-900 rounded-[9px] flex items-center justify-center">
                 <img
-                  src={theme === 'dark' ? '/logo-dark.svg' : '/logo-light.svg'}
+                  src="/logo.svg"
                   alt="KayaKu"
                   className="w-5 h-5"
                 />

@@ -73,11 +73,13 @@ export const CloudSyncModal: React.FC<CloudSyncModalProps> = ({
 
   return (
     <div
+      onClick={onClose}
       className={`fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 ${
         isClosing ? 'fade-out pointer-events-none' : 'animate-fade-in'
       }`}
     >
       <div
+        onClick={(e) => e.stopPropagation()}
         className={`w-full max-w-lg bg-white dark:bg-darkcard rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200 dark:border-darkborder overflow-hidden ${
           isClosing ? 'modal-out pointer-events-none' : 'modal-in'
         }`}

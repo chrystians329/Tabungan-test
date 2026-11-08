@@ -1,21 +1,20 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="KayaKu app icon">
   <defs>
-    <linearGradient id="kkCoin" x1="18%" y1="0%" x2="85%" y2="100%">
-      <stop offset="0%" stop-color="#34D399" />
-      <stop offset="100%" stop-color="#059669" />
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0B0F17"/>
+      <stop offset="100%" stop-color="#0E3D2F"/>
     </linearGradient>
-    <linearGradient id="kkRing" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#10B981" />
-      <stop offset="100%" stop-color="#047857" />
+    <linearGradient id="mainGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6ED7A9"/>
+      <stop offset="100%" stop-color="#1F7C58"/>
     </linearGradient>
   </defs>
 
-  <!-- Target / Goals: dua cincin lingkaran -->
-  <circle cx="50" cy="50" r="41" stroke="url(#kkRing)" stroke-width="7" stroke-opacity="0.45" />
-  <circle cx="50" cy="50" r="28" stroke="url(#kkRing)" stroke-width="7" stroke-opacity="0.8" />
+  <rect width="512" height="512" rx="128" fill="url(#bgGradient)"/>
+  <circle cx="256" cy="256" r="190" fill="#2C8A5E" stroke="#F8FAFC" stroke-width="10"/>
 
-  <!-- Koin tabungan di pusat target -->
-  <circle cx="50" cy="50" r="17" fill="url(#kkCoin)" />
-  <rect x="43.5" y="45.5" width="13" height="4.5" rx="2.25" fill="#064E3B" fill-opacity="0.85" />
-  <circle cx="50" cy="57" r="3" fill="#ECFDF5" fill-opacity="0.9" />
+  <path d="M150 320 L224 238 L262 286 L324 206 L388 172 L440 126 L448 164 L412 176 L368 229 L318 286 L286 328 L186 328 Z" fill="url(#mainGradient)"/>
+  <path d="M170 318 L224 318 L256 354 L334 354 L338 340 L284 279 L238 232 L194 226 L164 248 Z" fill="#155E47" opacity="0.9"/>
+
+  <text x="256" y="290" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="202" font-weight="700" fill="#F8FAFC">Rp</text>
 </svg>

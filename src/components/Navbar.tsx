@@ -31,11 +31,9 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           <div className="flex items-center space-x-2.5 min-w-0">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-brand-400 p-0.5 shadow-soft flex items-center justify-center shrink-0">
-              <div className={`w-full h-full rounded-[10px] flex items-center justify-center ${
-                theme === 'dark' ? 'bg-slate-900' : 'bg-white'
-              }`}>
+              <div className="w-full h-full bg-slate-900 rounded-[10px] flex items-center justify-center">
                 <img
-                  src={theme === 'dark' ? '/logo-dark.svg' : '/logo-light.svg'}
+                  src="/logo.svg"
                   alt="KayaKu Logo"
                   className="w-6 h-6 object-contain"
                 />

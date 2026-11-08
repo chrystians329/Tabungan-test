@@ -10,6 +10,7 @@ import React, {
 import {
   Wallet,
   Transaction,
+  TransactionType,
   Goal,
   WealthBreakdown,
   AppSettings,
@@ -409,32 +410,33 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, [wallets, goals]);
 
   // ================= Transactions CRUD =================
+  const adjustWalletBalances = (
+    list: Wallet[],
+    tx: { type: TransactionType; amount: number; walletId: string; toWalletId?: string },
+    multiplier: 1 | -1
+  ): Wallet[] => {
+    return list.map((w) => {
+      if (tx.type === 'income' && w.id === tx.walletId) {
+        return { ...w, balance: w.balance + tx.amount * multiplier };
+      }
+      if (tx.type === 'expense' && w.id === tx.walletId) {
+        return { ...w, balance: w.balance - tx.amount * multiplier };
+      }
+      if (tx.type === 'transfer') {
+        if (w.id === tx.walletId) return { ...w, balance: w.balance - tx.amount * multiplier };
+        if (w.id === tx.toWalletId) return { ...w, balance: w.balance + tx.amount * multiplier };
+      }
+      return w;
+    });
+  };
+
   const addTransaction = (txData: Omit<Transaction, 'id' | 'createdAt'>) => {
     const newTx: Transaction = {
       ...txData,
       id: `tx_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
       createdAt: new Date().toISOString(),
     };
-
-    // Update wallet balance accordingly (saldo boleh minus / overdraw)
-    const updatedWallets = wallets.map((w) => {
-      if (txData.type === 'income' && w.id === txData.walletId) {
-        return { ...w, balance: w.balance + txData.amount };
-      }
-      if (txData.type === 'expense' && w.id === txData.walletId) {
-        return { ...w, balance: w.balance - txData.amount };
-      }
-      if (txData.type === 'transfer') {
-        if (w.id === txData.walletId) {
-          return { ...w, balance: w.balance - txData.amount };
-        }
-        if (w.id === txData.toWalletId) {
-          return { ...w, balance: w.balance + txData.amount };
-        }
-      }
-      return w;
-    });
-
+    const updatedWallets = adjustWalletBalances(wallets, txData, 1);
     const updatedTxs = [newTx, ...transactions];
     setWallets(updatedWallets);
     setTransactions(updatedTxs);
@@ -445,45 +447,9 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const oldTx = transactions.find((t) => t.id === id);
     if (!oldTx) return;
 
-    // Rollback old transaction on wallets
-    let tempWallets = [...wallets];
-    if (oldTx.type === 'income') {
-      tempWallets = tempWallets.map((w) =>
-        w.id === oldTx.walletId
-          ? { ...w, balance: w.balance - oldTx.amount }
-          : w
-      );
-    } else if (oldTx.type === 'expense') {
-      tempWallets = tempWallets.map((w) =>
-        w.id === oldTx.walletId ? { ...w, balance: w.balance + oldTx.amount } : w
-      );
-    } else if (oldTx.type === 'transfer') {
-      tempWallets = tempWallets.map((w) => {
-        if (w.id === oldTx.walletId) return { ...w, balance: w.balance + oldTx.amount };
-        if (w.id === oldTx.toWalletId) return { ...w, balance: w.balance - oldTx.amount };
-        return w;
-      });
-    }
-
-    // Apply new transaction state
     const newTx = { ...oldTx, ...updatedFields };
-    if (newTx.type === 'income') {
-      tempWallets = tempWallets.map((w) =>
-        w.id === newTx.walletId ? { ...w, balance: w.balance + newTx.amount } : w
-      );
-    } else if (newTx.type === 'expense') {
-      tempWallets = tempWallets.map((w) =>
-        w.id === newTx.walletId
-          ? { ...w, balance: w.balance - newTx.amount }
-          : w
-      );
-    } else if (newTx.type === 'transfer') {
-      tempWallets = tempWallets.map((w) => {
-        if (w.id === newTx.walletId) return { ...w, balance: w.balance - newTx.amount };
-        if (w.id === newTx.toWalletId) return { ...w, balance: w.balance + newTx.amount };
-        return w;
-      });
-    }
+    let tempWallets = adjustWalletBalances(wallets, oldTx, -1);
+    tempWallets = adjustWalletBalances(tempWallets, newTx, 1);
 
     const updatedTxs = transactions.map((t) => (t.id === id ? newTx : t));
     setWallets(tempWallets);
@@ -495,25 +461,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const oldTx = transactions.find((t) => t.id === id);
     if (!oldTx) return;
 
-    let updatedWallets = [...wallets];
-    if (oldTx.type === 'income') {
-      updatedWallets = updatedWallets.map((w) =>
-        w.id === oldTx.walletId
-          ? { ...w, balance: w.balance - oldTx.amount }
-          : w
-      );
-    } else if (oldTx.type === 'expense') {
-      updatedWallets = updatedWallets.map((w) =>
-        w.id === oldTx.walletId ? { ...w, balance: w.balance + oldTx.amount } : w
-      );
-    } else if (oldTx.type === 'transfer') {
-      updatedWallets = updatedWallets.map((w) => {
-        if (w.id === oldTx.walletId) return { ...w, balance: w.balance + oldTx.amount };
-        if (w.id === oldTx.toWalletId) return { ...w, balance: w.balance - oldTx.amount };
-        return w;
-      });
-    }
-
+    const updatedWallets = adjustWalletBalances(wallets, oldTx, -1);
     const updatedTxs = transactions.filter((t) => t.id !== id);
     setWallets(updatedWallets);
     setTransactions(updatedTxs);
@@ -637,63 +585,42 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     broadcastChange(wallets, transactions, goals, scanHistory, next);
   };
 
-  // ================= Income Templates =================
-  const addIncomeTemplate = (tpl: Omit<IncomeTemplate, 'id' | 'createdAt'>) => {
-    const newTpl: IncomeTemplate = {
-      ...tpl,
-      id: `tpl_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-      createdAt: new Date().toISOString(),
-    };
-    applySettings({
-      ...settings,
-      incomeTemplates: [...(settings.incomeTemplates || []), newTpl],
-    });
+  // ================= Templates CRUD =================
+  const mutateTemplate = (
+    key: 'incomeTemplates' | 'expenseTemplates',
+    action: 'add' | 'update' | 'delete',
+    data: any
+  ) => {
+    const current = settings[key] || [];
+    let updated: (IncomeTemplate | ExpenseTemplate)[];
+    if (action === 'add') {
+      const newTpl: IncomeTemplate = {
+        ...data,
+        id: `${key === 'incomeTemplates' ? 'tpl' : 'tplexp'}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+        createdAt: new Date().toISOString(),
+      };
+      updated = [...current, newTpl];
+    } else if (action === 'update') {
+      updated = current.map((t) => (t.id === data.id ? { ...t, ...data.tpl } : t));
+    } else {
+      updated = current.filter((t) => t.id !== data.id);
+    }
+    applySettings({ ...settings, [key]: updated });
   };
 
-  const updateIncomeTemplate = (id: string, tpl: Partial<IncomeTemplate>) => {
-    applySettings({
-      ...settings,
-      incomeTemplates: (settings.incomeTemplates || []).map((t) =>
-        t.id === id ? { ...t, ...tpl } : t
-      ),
-    });
-  };
+  const addIncomeTemplate = (tpl: Omit<IncomeTemplate, 'id' | 'createdAt'>) =>
+    mutateTemplate('incomeTemplates', 'add', tpl);
+  const updateIncomeTemplate = (id: string, tpl: Partial<IncomeTemplate>) =>
+    mutateTemplate('incomeTemplates', 'update', { id, tpl });
+  const deleteIncomeTemplate = (id: string) =>
+    mutateTemplate('incomeTemplates', 'delete', { id });
 
-  const deleteIncomeTemplate = (id: string) => {
-    applySettings({
-      ...settings,
-      incomeTemplates: (settings.incomeTemplates || []).filter((t) => t.id !== id),
-    });
-  };
-
-  // ================= Expense Templates =================
-  const addExpenseTemplate = (tpl: Omit<ExpenseTemplate, 'id' | 'createdAt'>) => {
-    const newTpl: ExpenseTemplate = {
-      ...tpl,
-      id: `tplexp_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-      createdAt: new Date().toISOString(),
-    };
-    applySettings({
-      ...settings,
-      expenseTemplates: [...(settings.expenseTemplates || []), newTpl],
-    });
-  };
-
-  const updateExpenseTemplate = (id: string, tpl: Partial<ExpenseTemplate>) => {
-    applySettings({
-      ...settings,
-      expenseTemplates: (settings.expenseTemplates || []).map((t) =>
-        t.id === id ? { ...t, ...tpl } : t
-      ),
-    });
-  };
-
-  const deleteExpenseTemplate = (id: string) => {
-    applySettings({
-      ...settings,
-      expenseTemplates: (settings.expenseTemplates || []).filter((t) => t.id !== id),
-    });
-  };
+  const addExpenseTemplate = (tpl: Omit<ExpenseTemplate, 'id' | 'createdAt'>) =>
+    mutateTemplate('expenseTemplates', 'add', tpl);
+  const updateExpenseTemplate = (id: string, tpl: Partial<ExpenseTemplate>) =>
+    mutateTemplate('expenseTemplates', 'update', { id, tpl });
+  const deleteExpenseTemplate = (id: string) =>
+    mutateTemplate('expenseTemplates', 'delete', { id });
 
   const updateSettings = (newSettings: Partial<AppSettings>) => {
     applySettings({ ...settings, ...newSettings });

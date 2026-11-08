@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import {
   Target,
   ArrowUpRight,
@@ -49,22 +49,39 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   setActiveTab,
 }) => {
   const { breakdown, wallets, transactions, goals } = useFinance();
-  const [chartPage, setChartPage] = useState(0);
 
   const now = new Date();
-  const currentMonthPrefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const currentYear = now.getFullYear();
+
+  // Tahun unduh / pertama kali aplikasi digunakan (default: 2026 atau tahun transaksi paling awal)
+  const installYear = useMemo(() => {
+    const saved = localStorage.getItem('kayaku_install_year');
+    if (saved && !isNaN(parseInt(saved, 10))) {
+      return parseInt(saved, 10);
+    }
+    let earliest = currentYear;
+    transactions.forEach((t) => {
+      const y = parseInt(t.date?.slice(0, 4), 10);
+      if (!isNaN(y) && y < earliest) earliest = y;
+    });
+    localStorage.setItem('kayaku_install_year', String(earliest));
+    return earliest;
+  }, [transactions, currentYear]);
+
+  const [selectedYear, setSelectedYear] = useState<number>(currentYear);
+  const chartDrag = useRef<{ pointerId: number; startX: number; startScrollLeft: number } | null>(null);
 
   // Recent transactions (top 5)
   const recentTransactions = transactions.slice(0, 5);
 
-  // Diagram ditampilkan per rentang enam bulan agar riwayat sebelumnya tetap bisa dibuka.
+  // 12 Bulan (Januari - Desember) sesuai lembaran tahun yang dipilih
   const monthlySeries = useMemo(() => {
-    const months = Array.from({ length: 6 }, (_, i) => {
-      const d = new Date(now.getFullYear(), now.getMonth() + chartPage * 6 - 5 + i, 1);
-      const prefix = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    const months = Array.from({ length: 12 }, (_, i) => {
+      const prefix = `${selectedYear}-${String(i + 1).padStart(2, '0')}`;
       return {
         key: prefix,
-        label: MONTH_LABELS[d.getMonth()],
+        label: MONTH_LABELS[i],
+        fullMonth: i,
         income: 0,
         expense: 0,
       };
@@ -78,24 +95,34 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     });
 
     return months;
-  }, [transactions, now.getFullYear(), now.getMonth(), chartPage]);
+  }, [transactions, selectedYear]);
 
-  const currentMonth = monthlySeries.find((month) => month.key === currentMonthPrefix);
+  // Bulan saat ini (untuk summary kartu jika di tahun aktif)
+  const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const currentMonth = monthlySeries.find((m) => m.key === currentMonthKey);
   const monthlyIncome = currentMonth?.income || 0;
   const monthlyExpense = currentMonth?.expense || 0;
-  const chartMax = Math.max(
-    1,
-    ...monthlySeries.map((m) => Math.max(m.income, m.expense))
-  );
+
+  const rawMax = Math.max(0, ...monthlySeries.map((m) => Math.max(m.income, m.expense)));
+  // Hitung batas atas (ceiling) angka yang rapi agar garis penanda rupiah bernilai bulat
+  const chartCeiling = useMemo(() => {
+    if (rawMax <= 0) return 1_000_000;
+    const mag = Math.pow(10, Math.floor(Math.log10(rawMax)));
+    const norm = rawMax / mag;
+    let factor = 1;
+    if (norm <= 1) factor = 1;
+    else if (norm <= 2) factor = 2;
+    else if (norm <= 2.5) factor = 2.5;
+    else if (norm <= 5) factor = 5;
+    else factor = 10;
+    return factor * mag;
+  }, [rawMax]);
+
   const seriesIncome = monthlySeries.reduce((sum, m) => sum + m.income, 0);
   const seriesExpense = monthlySeries.reduce((sum, m) => sum + m.expense, 0);
-  const chartRangeLabel = `${new Intl.DateTimeFormat('id-ID', {
-    month: 'short',
-    year: 'numeric',
-  }).format(new Date(`${monthlySeries[0].key}-01`))} – ${new Intl.DateTimeFormat('id-ID', {
-    month: 'short',
-    year: 'numeric',
-  }).format(new Date(`${monthlySeries[5].key}-01`))}`;
+
+  // Garis penanda level rupiah (seperti penanda jarak pada lomba lari: 100%, 75%, 50%, 25%, 0%)
+  const gridLevels = [1, 0.75, 0.5, 0.25, 0];
 
   return (
     <div className="space-y-5 pb-20 lg:pb-8">
@@ -231,33 +258,34 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </div>
 
-      {/* DIAGRAM PEMASUKAN & PENGELUARAN 6 BULAN */}
-      <div className="p-5 rounded-2xl bg-white dark:bg-darkcard border border-slate-200 dark:border-darkborder shadow-soft">
+      {/* DIAGRAM PEMASUKAN & PENGELUARAN TAHUNAN */}
+      <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-darkcard border border-slate-200 dark:border-darkborder shadow-soft">
         <div className="flex flex-col gap-3 mb-4">
           <div className="flex items-center justify-between gap-2">
             <h2 className="text-base font-bold text-slate-900 dark:text-white">
-              Arus Kas <span className="text-xs font-medium text-slate-400">6 Bulan</span>
+              Arus Kas
             </h2>
             <div className="flex items-center gap-1">
               <button
                 type="button"
-                onClick={() => setChartPage((page) => page - 1)}
-                aria-label="Lihat enam bulan sebelumnya"
-                title="Lihat enam bulan sebelumnya"
-                className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 dark:border-darkborder text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-darkbg transition"
+                onClick={() => setSelectedYear((y) => Math.max(installYear, y - 1))}
+                disabled={selectedYear <= installYear}
+                aria-label="Lihat tahun sebelumnya"
+                title={`Lihat tahun ${selectedYear - 1}`}
+                className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 dark:border-darkborder text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-darkbg transition disabled:opacity-30 disabled:cursor-not-allowed"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
-              <span className="min-w-28 text-center text-[11px] font-medium text-slate-500 dark:text-slate-400">
-                {chartRangeLabel}
+              <span className="min-w-24 text-center text-xs font-bold text-slate-800 dark:text-slate-100">
+                Tahun {selectedYear}
               </span>
               <button
                 type="button"
-                onClick={() => setChartPage((page) => Math.min(0, page + 1))}
-                disabled={chartPage === 0}
-                aria-label="Lihat enam bulan berikutnya"
-                title="Lihat enam bulan berikutnya"
-                className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 dark:border-darkborder text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-darkbg transition disabled:opacity-40 disabled:cursor-not-allowed"
+                onClick={() => setSelectedYear((y) => Math.min(currentYear, y + 1))}
+                disabled={selectedYear >= currentYear}
+                aria-label="Lihat tahun berikutnya"
+                title={`Lihat tahun ${selectedYear + 1}`}
+                className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 dark:border-darkborder text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-darkbg transition disabled:opacity-30 disabled:cursor-not-allowed"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
@@ -285,57 +313,123 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
         </div>
 
-        <div className="relative">
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-x-0 top-0 z-0 flex h-28 flex-col justify-between sm:h-32"
-          >
-            {[0, 1, 2, 3].map((line) => (
-              <span
-                key={line}
-                className="w-full border-t border-dashed border-slate-200 dark:border-darkborder"
-              />
-            ))}
+        {/* Chart Area with horizontally scrollable 12-month comparison */}
+        <div className="relative rounded-2xl bg-slate-50/60 dark:bg-darkbg/40 border border-slate-100 dark:border-darkborder/70 p-3 sm:p-4 overflow-hidden">
+          <div className="flex justify-end text-[11px] text-slate-400 dark:text-slate-500 mb-2 px-1 font-medium">
+            <span className="text-[10px] bg-slate-200/60 dark:bg-darkborder/60 px-2 py-0.5 rounded-full font-bold">
+              12 Bulan
+            </span>
           </div>
-          <div className="relative z-10 mx-auto grid w-full max-w-lg grid-cols-6 gap-0">
-            {monthlySeries.map((month) => {
-              const incomeHeight =
-                month.income > 0 ? Math.max(6, (month.income / chartMax) * 100) : 0;
-              const expenseHeight =
-                month.expense > 0 ? Math.max(6, (month.expense / chartMax) * 100) : 0;
 
-              return (
-                <div
-                  key={month.key}
-                  className="flex flex-col items-center gap-1.5"
-                  title={`${month.label}: +${formatRupiah(month.income)} / -${formatRupiah(
-                    month.expense
-                  )}`}
-                >
-                  <div className="flex items-end justify-center gap-1 w-full h-28 sm:h-32 border-b border-slate-200 dark:border-darkborder">
-                    <div
-                      className="w-full max-w-4 bg-emerald-500 rounded-t-md transition-all duration-500"
-                      style={{ height: `${incomeHeight}%` }}
-                    />
-                    <div
-                      className="w-full max-w-4 bg-rose-500 rounded-t-md transition-all duration-500"
-                      style={{ height: `${expenseHeight}%` }}
-                    />
+          <div
+            role="region"
+            aria-label="Diagram arus kas 12 bulan"
+            tabIndex={0}
+            className="overflow-x-auto pb-2 overscroll-x-contain cursor-grab active:cursor-grabbing select-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-500"
+            onPointerDown={(event) => {
+              if (event.pointerType !== 'mouse' || event.button !== 0) return;
+              chartDrag.current = {
+                pointerId: event.pointerId,
+                startX: event.clientX,
+                startScrollLeft: event.currentTarget.scrollLeft,
+              };
+              event.currentTarget.setPointerCapture(event.pointerId);
+            }}
+            onPointerMove={(event) => {
+              const drag = chartDrag.current;
+              if (!drag || drag.pointerId !== event.pointerId) return;
+              event.currentTarget.scrollLeft = drag.startScrollLeft - (event.clientX - drag.startX);
+            }}
+            onPointerUp={(event) => {
+              if (chartDrag.current?.pointerId === event.pointerId) chartDrag.current = null;
+            }}
+            onPointerCancel={(event) => {
+              if (chartDrag.current?.pointerId === event.pointerId) chartDrag.current = null;
+            }}
+            onLostPointerCapture={(event) => {
+              if (chartDrag.current?.pointerId === event.pointerId) chartDrag.current = null;
+            }}
+          >
+            <div className="relative min-w-[760px] md:min-w-[1000px] pt-1 pb-1">
+              {/* Garis penanda rupiah horizontal (seperti garis penanda km di lomba lari) */}
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-x-0 top-1 h-32 sm:h-36 flex flex-col justify-between z-0"
+              >
+                {gridLevels.map((lvl, idx) => (
+                  <div key={idx} className="flex items-center w-full">
+                    <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 w-14 text-right pr-2 shrink-0 select-none">
+                      {formatCompactRupiah(chartCeiling * lvl)}
+                    </span>
+                    <div className="w-full border-t border-dashed border-slate-200 dark:border-darkborder" />
                   </div>
-                  <span className="text-[10px] font-semibold text-slate-400">{month.label}</span>
-                  <span
-                    className={`text-[10px] font-bold ${
-                      month.income - month.expense >= 0
-                        ? 'text-brand-600 dark:text-brand-400'
-                        : 'text-rose-500'
-                    }`}
-                  >
-                    {month.income - month.expense >= 0 ? '+' : '-'}
-                    {formatCompactRupiah(Math.abs(month.income - month.expense))}
-                  </span>
-                </div>
-              );
-            })}
+                ))}
+              </div>
+
+              {/* 12 Bulan Kolom Bar */}
+              <div className="relative z-10 pl-14 grid grid-cols-12 gap-3 w-full">
+                {monthlySeries.map((month) => {
+                  const incomeHeight =
+                    month.income > 0
+                      ? Math.min(100, Math.max(6, (month.income / chartCeiling) * 100))
+                      : 0;
+                  const expenseHeight =
+                    month.expense > 0
+                      ? Math.min(100, Math.max(6, (month.expense / chartCeiling) * 100))
+                      : 0;
+                  const isCurrentMonth =
+                    selectedYear === currentYear && month.fullMonth === now.getMonth();
+                  const net = month.income - month.expense;
+
+                  return (
+                    <div
+                      key={month.key}
+                      className="flex flex-col items-center gap-2 group min-w-[50px]"
+                      title={`${month.label} ${selectedYear}: +${formatRupiah(
+                        month.income
+                      )} / -${formatRupiah(month.expense)}`}
+                    >
+                      {/* Batang Diagram */}
+                      <div className="flex items-end justify-center gap-1.5 w-full h-32 sm:h-36 border-b border-slate-200 dark:border-darkborder pb-0.5">
+                        <div
+                          className="w-3.5 sm:w-4 bg-emerald-500 rounded-t-md transition-all duration-500 group-hover:brightness-110 shadow-sm"
+                          style={{ height: `${incomeHeight}%` }}
+                        />
+                        <div
+                          className="w-3.5 sm:w-4 bg-rose-500 rounded-t-md transition-all duration-500 group-hover:brightness-110 shadow-sm"
+                          style={{ height: `${expenseHeight}%` }}
+                        />
+                      </div>
+
+                      {/* Label Bulan & Net */}
+                      <div className="flex flex-col items-center">
+                        <span
+                          className={`text-[11px] font-bold text-center px-1.5 py-0.5 rounded-md ${
+                            isCurrentMonth
+                              ? 'bg-brand-500 text-white shadow-xs'
+                              : 'text-slate-600 dark:text-slate-300'
+                          }`}
+                        >
+                          {month.label}
+                        </span>
+                        <span
+                          className={`text-[9px] font-semibold mt-0.5 whitespace-nowrap ${
+                            net > 0
+                              ? 'text-brand-600 dark:text-brand-400'
+                              : net < 0
+                              ? 'text-rose-500'
+                              : 'text-slate-400'
+                          }`}
+                        >
+                          {net > 0 ? '+' : ''}
+                          {formatCompactRupiah(net)}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -346,10 +440,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <div className="space-y-1">
             <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-emerald-500" />
-              Pemasukan
+              Pemasukan {selectedYear === currentYear ? `(${MONTH_LABELS[now.getMonth()]})` : `(${selectedYear})`}
             </span>
             <p className="text-xl font-extrabold text-emerald-600 dark:text-emerald-400">
-              +{formatRupiah(monthlyIncome)}
+              +{formatRupiah(selectedYear === currentYear ? monthlyIncome : seriesIncome)}
             </p>
           </div>
           <div className="w-11 h-11 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
@@ -361,10 +455,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <div className="space-y-1">
             <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-rose-500" />
-              Pengeluaran
+              Pengeluaran {selectedYear === currentYear ? `(${MONTH_LABELS[now.getMonth()]})` : `(${selectedYear})`}
             </span>
             <p className="text-xl font-extrabold text-rose-600 dark:text-rose-400">
-              -{formatRupiah(monthlyExpense)}
+              -{formatRupiah(selectedYear === currentYear ? monthlyExpense : seriesExpense)}
             </p>
           </div>
           <div className="w-11 h-11 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center">

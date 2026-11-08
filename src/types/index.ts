@@ -84,16 +84,7 @@ export interface IncomeTemplate {
   createdAt: string;
 }
 
-export interface ExpenseTemplate {
-  id: string;
-  name: string;
-  amount: number;
-  category: string;
-  merchant?: string;
-  note?: string;
-  walletId?: string;
-  createdAt: string;
-}
+export type ExpenseTemplate = IncomeTemplate;
 
 export interface ScanHistoryItem {
   id: string;

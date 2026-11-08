@@ -84,7 +84,7 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
         <div>
           <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
             <Receipt className="w-6 h-6 text-brand-500" />
-            Riwayat & Kelola Transaksi (CRUD)
+            Riwayat & Kelola Transaksi
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
             Total {filteredTransactions.length} transaksi tercatat

@@ -87,12 +87,7 @@ const AppContent: React.FC = () => {
     setIsWalletModalOpen(true);
   };
 
-  const handleOpenTransfer = () => {
-    setEditingTx(null);
-    setPrefillTx(null);
-    setTxModalType('transfer');
-    setIsTxModalOpen(true);
-  };
+  const handleOpenTransfer = () => handleOpenNewTransaction('transfer');
 
   const handleOpenNewGoal = () => {
     setEditingGoal(null);
